@@ -17,6 +17,9 @@ void main(List<String> args) {
           isInvalid = false;
         }
         isNumberLoop = false;
+        if (digits.length == 0) {
+          throw ("Invalid Input");
+        }
       }
       if (character == "0" ||
           character == "1" ||
