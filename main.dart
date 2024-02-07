@@ -64,7 +64,7 @@ void main(List<String> args) {
     if (operators.length == 0) {
       throw ("Invalid Input");
     }
-  }
+  } else if (digits.length == operators.length)
 
   // Creating the Result
 
