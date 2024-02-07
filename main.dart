@@ -44,26 +44,20 @@ void main(List<String> args) {
   }
 
   if (isInvalid) {
-    // print("Invalid Input");
-    return;
+    throw ("Invalid Input");
   }
 
   // Validating the Input
   if (digits.length - 1 != operators.length) {
-    // print("Invalid Input");
-    return;
   } else if (digits.length == 0) {
-    // print("Invalid Input");
-    return;
+    throw ("Invalid Input");
   } else if (digits.length == 1) {
     if (operators.length == 1) {
-      // print("Invalid Input");
-      return;
+      throw ("Invalid Input");
     }
   } else if (digits.length == 2) {
     if (operators.length == 0) {
-      // print("Invalid Input");
-      return;
+      throw ("Invalid Input");
     }
   }
 
