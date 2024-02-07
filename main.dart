@@ -6,7 +6,9 @@ void main(List<String> args) {
   bool isInvalid = false;
 
   // Discovering the Number of Digits
-  if (args.length == 1) {
+  if (args.isEmpty) {
+    throw ("Invalid Input");
+  } else if (args[0] == "") {
     throw ("Invalid Input");
   }
 
