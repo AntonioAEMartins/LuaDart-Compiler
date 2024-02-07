@@ -7,6 +7,10 @@ void main(List<String> args) {
 
   // Discovering the Number of Digits
 
+  if (args.isEmpty) {
+    throw ("Invalid Input");
+  }
+
   for (final arg in args) {
     arg.runes.forEach((int rune) {
       final character = new String.fromCharCode(rune);
