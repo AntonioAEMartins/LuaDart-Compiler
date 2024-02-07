@@ -23,7 +23,7 @@ void main(List<String> args) {
         }
         isNumberLoop = false;
         if (digits.length == 0) {
-          throw ("Invalid Input");
+          isInvalid = true;
         }
       } else if (character == "0" ||
           character == "1" ||
@@ -43,7 +43,7 @@ void main(List<String> args) {
           digits[numberDivisors] += character;
         }
       } else {
-        throw ("Invalid Input");
+        isInvalid = true;
       }
     });
   }
