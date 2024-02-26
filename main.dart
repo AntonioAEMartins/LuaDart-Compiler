@@ -232,5 +232,5 @@ class Parser {
 
 void main(List<String> args) {
   Parser parser = Parser();
-  parser.run("-    1");
+  parser.run(args[0]);
 }
