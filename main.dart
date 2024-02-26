@@ -1,4 +1,4 @@
-
+import 'dart:io';
 
 class Token {
   String type; // Tipo do Token [int, operator, EOF]
@@ -97,6 +97,10 @@ class Parser {
         // Checando se é válido, caso tenha terminado com + ou - é inválid
         if (tokenizer.next.type == "EOF") {
           throw ("Invalid Input");
+        } else if (tokenizer.next.type == "plus") {
+          throw ("Invalid Input");
+        } else if (tokenizer.next.type == "minus") {
+          throw ("Invalid Input");
         }
       }
       actualToken = tokenizer.next;
@@ -107,7 +111,11 @@ class Parser {
   int run(String code) {
     // Inicia a análise do código fonte, retorna o resultado da expressão analisada, caso o token seja EOF, finaliza.
     tokenizer = Tokenizer(source: code);
+    if (!code.contains("+") || !code.contains("-")) {
+      throw ("Invalid Input");
+    }
     final result = parseExpression();
+    stdout.writeln(result);
     return result;
   }
 }
