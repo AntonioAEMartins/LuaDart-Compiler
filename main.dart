@@ -34,6 +34,22 @@ class Tokenizer {
         next = Token("minus", 0);
         position++;
         return;
+      } else if (character == "*") {
+        if (number != "") {
+          next = Token("int", int.parse(number));
+          return;
+        }
+        next = Token("multiply", 0);
+        position++;
+        return;
+      } else if (character == "/") {
+        if (number != "") {
+          next = Token("int", int.parse(number));
+          return;
+        }
+        next = Token("division", 0);
+        position++;
+        return;
       } else if (character == "0" ||
           character == "1" ||
           character == "2" ||
@@ -64,22 +80,43 @@ class Parser {
   int parseExpression() {
     int result = 0;
     bool isSum = true;
+    bool isMultiply = true;
 
     tokenizer.selectNext();
     Token actualToken = tokenizer.next;
 
-    if (actualToken.type == "EOF") {
-      throw ("Invalid Input");
-    } else if (actualToken.type == "plus") {
-      throw ("Invalid Input");
-    } else if (actualToken.type == "minus") {
-      throw ("Invalid Input");
+    List<String> operators = ["plus", "minus", "multiply", "division", "EOF"];
+
+    if (operators.contains(actualToken.type)) {
+      throw ("Invalid Operator Order");
     }
 
+    // Initial operation
+
+    result = actualToken.value;
+
+    tokenizer.selectNext();
+    actualToken = tokenizer.next;
+
     while (actualToken.type != "EOF") {
+      print("Actual Token: ${actualToken.type} ${actualToken.value}");
       if (actualToken.type == "int") {
         tokenizer.selectNext();
-        if (isSum) {
+        print("Next Token: ${tokenizer.next.type} ${tokenizer.next.value}");
+        if (tokenizer.next.type == "multiply" ||
+            tokenizer.next.type == "division") {
+          int aux = 1;
+          aux = term(actualToken, isMultiply, aux, operators);
+          print("Term: $aux");
+          if (isSum) {
+            result += aux;
+          } else {
+            result -= aux;
+          }
+          print("Result: $result");
+          isSum = tokenizer.next.type == "plus";
+          print("Term IsSum: $isSum");
+        } else if (isSum) {
           result += actualToken.value;
         } else if (tokenizer.next.type == "EOF") {
           if (isSum) {
@@ -92,16 +129,48 @@ class Parser {
           result -= actualToken.value;
         }
       } else {
+        // In case there is only multiplication or division
+        if (tokenizer.next.type == "multiply" ||
+            tokenizer.next.type == "division") {
+          print("apenas múltiplicação");
+          final aux = term(actualToken, isMultiply, result, operators);
+          result = aux;
+        }
+        print("IsSum: $isSum");
         isSum = tokenizer.next.type == "plus";
         tokenizer.selectNext();
-        // Checando se é válido, caso tenha terminado com + ou - é inválid
-        if (tokenizer.next.type == "EOF") {
-          throw ("Invalid Input");
-        } else if (tokenizer.next.type == "plus") {
-          throw ("Invalid Input");
-        } else if (tokenizer.next.type == "minus") {
-          throw ("Invalid Input");
+      }
+      actualToken = tokenizer.next;
+    }
+
+    return result;
+  }
+
+  int term(
+      Token actualToken, bool isMultiply, int result, List<String> operators) {
+    while (actualToken.type != "EOF") {
+      if (actualToken.type == "int") {
+        tokenizer.selectNext();
+        if (isMultiply) {
+          result *= actualToken.value;
+        } else if (tokenizer.next.type == "EOF") {
+          if (isMultiply) {
+            result *= actualToken.value;
+          } else {
+            result ~/= actualToken.value;
+          }
+          break;
+        } else {
+          result ~/= actualToken.value;
         }
+      } else {
+        // If the next token is Minus or Plus, it needs to return the result
+        if (tokenizer.next.type == "minus" || tokenizer.next.type == "plus") {
+          return result;
+        }
+        isMultiply = tokenizer.next.type == "multiply";
+        tokenizer.selectNext();
+        if (operators.contains(tokenizer.next.type)) throw ("Invalid Input");
       }
       actualToken = tokenizer.next;
     }
@@ -111,9 +180,6 @@ class Parser {
   int run(String code) {
     // Inicia a análise do código fonte, retorna o resultado da expressão analisada, caso o token seja EOF, finaliza.
     tokenizer = Tokenizer(source: code);
-    if (!code.contains("+") || !code.contains("-")) {
-      throw ("Invalid Input");
-    }
     final result = parseExpression();
     stdout.writeln(result);
     return result;
