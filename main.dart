@@ -77,15 +77,16 @@ class Parser {
   late Tokenizer
       tokenizer; // Objeto da classe que irá ler o código fonte e alimentar o Analisador
 
+  List<String> operators = ["plus", "minus", "multiply", "division", "EOF"];
+
   int parseExpression() {
     int result = 0;
     bool isSum = true;
     bool isMultiply = true;
+    bool wasTerm = false;
 
     tokenizer.selectNext();
     Token actualToken = tokenizer.next;
-
-    List<String> operators = ["plus", "minus", "multiply", "division", "EOF"];
 
     if (operators.contains(actualToken.type)) {
       throw ("Invalid Operator Order");
@@ -127,12 +128,15 @@ class Parser {
         // In case there is only multiplication or division
         if (tokenizer.next.type == "multiply" ||
             tokenizer.next.type == "division") {
+          wasTerm = true;
           final aux = term(actualToken, isMultiply, result, operators);
           result = aux;
         }
         isSum = tokenizer.next.type == "plus";
         tokenizer.selectNext();
-        if (tokenizer.next.type == "EOF") {
+        if (tokenizer.next.type == "EOF" && wasTerm) {
+          return result;
+        } else if (tokenizer.next.type == "EOF" && !wasTerm) {
           throw ("Invalid Operator Order");
         } else if (tokenizer.next.type == "plus") {
           throw ("Invalid Operator Order");
@@ -179,6 +183,13 @@ class Parser {
 
   int run(String code) {
     // Inicia a análise do código fonte, retorna o resultado da expressão analisada, caso o token seja EOF, finaliza.
+    if (code.contains(" ") &&
+        !code.contains("+") &&
+        !code.contains("-") &&
+        !code.contains("*") &&
+        !code.contains("/")) {
+      throw ("Invalid Input");
+    }
     tokenizer = Tokenizer(source: code);
     final result = parseExpression();
     stdout.writeln(result);
