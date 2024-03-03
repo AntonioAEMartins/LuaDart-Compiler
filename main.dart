@@ -99,23 +99,18 @@ class Parser {
     actualToken = tokenizer.next;
 
     while (actualToken.type != "EOF") {
-      print("Actual Token: ${actualToken.type} ${actualToken.value}");
       if (actualToken.type == "int") {
         tokenizer.selectNext();
-        print("Next Token: ${tokenizer.next.type} ${tokenizer.next.value}");
         if (tokenizer.next.type == "multiply" ||
             tokenizer.next.type == "division") {
           int aux = 1;
           aux = term(actualToken, isMultiply, aux, operators);
-          print("Term: $aux");
           if (isSum) {
             result += aux;
           } else {
             result -= aux;
           }
-          print("Result: $result");
           isSum = tokenizer.next.type == "plus";
-          print("Term IsSum: $isSum");
         } else if (isSum) {
           result += actualToken.value;
         } else if (tokenizer.next.type == "EOF") {
@@ -132,13 +127,18 @@ class Parser {
         // In case there is only multiplication or division
         if (tokenizer.next.type == "multiply" ||
             tokenizer.next.type == "division") {
-          print("apenas múltiplicação");
           final aux = term(actualToken, isMultiply, result, operators);
           result = aux;
         }
-        print("IsSum: $isSum");
         isSum = tokenizer.next.type == "plus";
         tokenizer.selectNext();
+        if (tokenizer.next.type == "EOF") {
+          throw ("Invalid Operator Order");
+        } else if (tokenizer.next.type == "plus") {
+          throw ("Invalid Operator Order");
+        } else if (tokenizer.next.type == "minus") {
+          throw ("Invalid Operator Order");
+        }
       }
       actualToken = tokenizer.next;
     }
