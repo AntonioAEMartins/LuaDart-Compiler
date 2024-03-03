@@ -167,6 +167,7 @@ class Parser {
         } else {
           result ~/= actualToken.value;
         }
+        isMultiply = tokenizer.next.type == "multiply";
       } else {
         // If the next token is Minus or Plus, it needs to return the result
         if (tokenizer.next.type == "minus" || tokenizer.next.type == "plus") {
