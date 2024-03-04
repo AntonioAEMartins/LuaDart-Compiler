@@ -104,16 +104,13 @@ class Parser {
         tokenizer.selectNext();
         if (tokenizer.next.type == "multiply" ||
             tokenizer.next.type == "division") {
-          print(
-              "Actual Token: ${actualToken.value}, isMultiply: $isMultiply, result: $result, operators: $operators");
-          print("Next Token: ${tokenizer.next.type}");
           int aux = 1;
           if (actualToken.type == "int") {
             aux = actualToken.value;
           }
+          actualToken = tokenizer.next;
           isMultiply = tokenizer.next.type == "multiply";
           aux = term(actualToken, isMultiply, aux, operators);
-          print("aux: $aux");
           if (isSum) {
             result += aux;
           } else {
