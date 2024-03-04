@@ -104,8 +104,16 @@ class Parser {
         tokenizer.selectNext();
         if (tokenizer.next.type == "multiply" ||
             tokenizer.next.type == "division") {
+          print(
+              "Actual Token: ${actualToken.value}, isMultiply: $isMultiply, result: $result, operators: $operators");
+          print("Next Token: ${tokenizer.next.type}");
           int aux = 1;
+          if (actualToken.type == "int") {
+            aux = actualToken.value;
+          }
+          isMultiply = tokenizer.next.type == "multiply";
           aux = term(actualToken, isMultiply, aux, operators);
+          print("aux: $aux");
           if (isSum) {
             result += aux;
           } else {
@@ -167,7 +175,6 @@ class Parser {
         } else {
           result ~/= actualToken.value;
         }
-        isMultiply = tokenizer.next.type == "multiply";
       } else {
         // If the next token is Minus or Plus, it needs to return the result
         if (tokenizer.next.type == "minus" || tokenizer.next.type == "plus") {
@@ -176,6 +183,9 @@ class Parser {
         isMultiply = tokenizer.next.type == "multiply";
         tokenizer.selectNext();
         if (operators.contains(tokenizer.next.type)) throw ("Invalid Input");
+      }
+      if (tokenizer.next.type != "EOF" && tokenizer.next.type != "int") {
+        isMultiply = tokenizer.next.type == "multiply";
       }
       actualToken = tokenizer.next;
     }
