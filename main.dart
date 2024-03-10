@@ -1,211 +1,161 @@
 import 'dart:io';
 
+enum TokenType {
+  integer,
+  plus,
+  minus,
+  multiply,
+  divide,
+  eof,
+  openParen,
+  closeParen
+}
+
 class Token {
-  String type; // Tipo do Token [int, operator, EOF]
-  int value; // Valor do Token [0-9, +, -, EOF]
+  final TokenType type;
+  final int value;
 
   Token(this.type, this.value);
 }
 
 class Tokenizer {
-  String source; // Código-fonte que será tokenizado
-  int position = 0; // Posição atual que o Tokenizador está separando
-  late Token next; // O último token separado
+  final String source;
+  int position = 0;
+  late Token next;
 
-  Tokenizer({required this.source});
+  Tokenizer(this.source) {
+    selectNext();
+  }
 
-  selectNext() {
-    String number = "";
-    while (position < source.length) {
-      final character = source[position];
-      if (character == "+") {
-        if (number != "") {
-          next = Token("int", int.parse(number));
-          return;
-        }
-        next = Token("plus", 0);
-        position++;
-        return;
-      } else if (character == "-") {
-        if (number != "") {
-          next = Token("int", int.parse(number));
-          return;
-        }
-        next = Token("minus", 0);
-        position++;
-        return;
-      } else if (character == "*") {
-        if (number != "") {
-          next = Token("int", int.parse(number));
-          return;
-        }
-        next = Token("multiply", 0);
-        position++;
-        return;
-      } else if (character == "/") {
-        if (number != "") {
-          next = Token("int", int.parse(number));
-          return;
-        }
-        next = Token("division", 0);
-        position++;
-        return;
-      } else if (character == "0" ||
-          character == "1" ||
-          character == "2" ||
-          character == "3" ||
-          character == "4" ||
-          character == "5" ||
-          character == "6" ||
-          character == "7" ||
-          character == "8" ||
-          character == "9") {
-        number += character;
-      }
+  void selectNext() {
+    while (position < source.length && source[position].trim().isEmpty) {
       position++;
     }
-    if (number != "") {
-      next = Token("int", int.parse(number));
+
+    if (position == source.length) {
+      next = Token(TokenType.eof, 0);
       return;
     }
-    next = Token("EOF", 0);
-    return;
+
+    final char = source[position];
+    switch (char) {
+      case '+':
+        next = Token(TokenType.plus, 0);
+        break;
+      case '-':
+        next = Token(TokenType.minus, 0);
+        break;
+      case '*':
+        next = Token(TokenType.multiply, 0);
+        break;
+      case '/':
+        next = Token(TokenType.divide, 0);
+        break;
+      case '(':
+        next = Token(TokenType.openParen, 0);
+        break;
+      case ')':
+        next = Token(TokenType.closeParen, 0);
+        break;
+      default:
+        if (char.contains(RegExp(r'\d'))) {
+          final start = position;
+          while (position < source.length &&
+              source[position].contains(RegExp(r'\d'))) {
+            position++;
+          }
+          final number = int.parse(source.substring(start, position));
+          next = Token(TokenType.integer, number);
+          return;
+        } else {
+          throw FormatException(
+              'Unexpected character $char at position $position');
+        }
+    }
+    position++;
   }
 }
 
 class Parser {
-  late Tokenizer
-      tokenizer; // Objeto da classe que irá ler o código fonte e alimentar o Analisador
+  late final Tokenizer tokenizer;
 
-  List<String> operators = ["plus", "minus", "multiply", "division", "EOF"];
+  Parser(String source) {
+    tokenizer = Tokenizer(source);
+  }
 
   int parseExpression() {
-    int result = 0;
-    bool isSum = true;
-    bool isMultiply = true;
-    bool wasTerm = false;
-
-    tokenizer.selectNext();
-    Token actualToken = tokenizer.next;
-
-    if (operators.contains(actualToken.type)) {
-      throw ("Invalid Operator Order");
-    }
-
-    // Initial operation
-
-    result = actualToken.value;
-
-    tokenizer.selectNext();
-    actualToken = tokenizer.next;
-
-    while (actualToken.type != "EOF") {
-      if (actualToken.type == "int") {
-        tokenizer.selectNext();
-        if (tokenizer.next.type == "multiply" ||
-            tokenizer.next.type == "division") {
-          int aux = 1;
-          if (actualToken.type == "int") {
-            aux = actualToken.value;
-          }
-          actualToken = tokenizer.next;
-          isMultiply = tokenizer.next.type == "multiply";
-          aux = term(actualToken, isMultiply, aux, operators);
-          if (isSum) {
-            result += aux;
-          } else {
-            result -= aux;
-          }
-          isSum = tokenizer.next.type == "plus";
-        } else if (isSum) {
-          result += actualToken.value;
-        } else if (tokenizer.next.type == "EOF") {
-          if (isSum) {
-            result += actualToken.value;
-          } else {
-            result -= actualToken.value;
-          }
-          break;
-        } else {
-          result -= actualToken.value;
-        }
+    int result = parseTerm();
+    while (tokenizer.next.type == TokenType.plus ||
+        tokenizer.next.type == TokenType.minus) {
+      var operator = tokenizer.next.type;
+      tokenizer.selectNext(); // Consume operator
+      int right = parseTerm();
+      if (operator == TokenType.plus) {
+        result += right;
       } else {
-        // In case there is only multiplication or division
-        if (tokenizer.next.type == "multiply" ||
-            tokenizer.next.type == "division") {
-          wasTerm = true;
-          final aux = term(actualToken, isMultiply, result, operators);
-          result = aux;
-        }
-        isSum = tokenizer.next.type == "plus";
-        tokenizer.selectNext();
-        if (tokenizer.next.type == "EOF" && wasTerm) {
-          return result;
-        } else if (tokenizer.next.type == "EOF" && !wasTerm) {
-          throw ("Invalid Operator Order");
-        } else if (tokenizer.next.type == "plus") {
-          throw ("Invalid Operator Order");
-        } else if (tokenizer.next.type == "minus") {
-          throw ("Invalid Operator Order");
-        }
+        result -= right;
       }
-      actualToken = tokenizer.next;
-    }
-
-    return result;
-  }
-
-  int term(
-      Token actualToken, bool isMultiply, int result, List<String> operators) {
-    while (actualToken.type != "EOF") {
-      if (actualToken.type == "int") {
-        tokenizer.selectNext();
-        if (isMultiply) {
-          result *= actualToken.value;
-        } else if (tokenizer.next.type == "EOF") {
-          if (isMultiply) {
-            result *= actualToken.value;
-          } else {
-            result ~/= actualToken.value;
-          }
-          break;
-        } else {
-          result ~/= actualToken.value;
-        }
-      } else {
-        // If the next token is Minus or Plus, it needs to return the result
-        if (tokenizer.next.type == "minus" || tokenizer.next.type == "plus") {
-          return result;
-        }
-        isMultiply = tokenizer.next.type == "multiply";
-        tokenizer.selectNext();
-        if (operators.contains(tokenizer.next.type)) throw ("Invalid Input");
-      }
-      if (tokenizer.next.type != "EOF" && tokenizer.next.type != "int") {
-        isMultiply = tokenizer.next.type == "multiply";
-      }
-      actualToken = tokenizer.next;
     }
     return result;
   }
 
-  int run(String code) {
-    // Inicia a análise do código fonte, retorna o resultado da expressão analisada, caso o token seja EOF, finaliza.
-    if (code.contains(" ") &&
-        !code.contains("+") &&
-        !code.contains("-") &&
-        !code.contains("*") &&
-        !code.contains("/")) {
-      throw ("Invalid Input");
+  int parseTerm() {
+    int result = parseFactor();
+    while (tokenizer.next.type == TokenType.multiply ||
+        tokenizer.next.type == TokenType.divide) {
+      var operator = tokenizer.next.type;
+      tokenizer.selectNext(); // Consume operator
+      int right = parseFactor();
+      if (operator == TokenType.multiply) {
+        result *= right;
+      } else {
+        result ~/= right; // Use integer division
+      }
     }
-    tokenizer = Tokenizer(source: code);
-    final result = parseExpression();
-    stdout.writeln(result);
     return result;
+  }
+
+  int parseFactor() {
+    if (tokenizer.next.type == TokenType.integer) {
+      int value = tokenizer.next.value;
+      tokenizer.selectNext(); // Consume number
+      return value;
+    }
+
+    // in Case of unary minus
+    else if (tokenizer.next.type == TokenType.minus) {
+      tokenizer.selectNext(); // Consume operator
+      return -parseFactor();
+    } else if (tokenizer.next.type == TokenType.plus) {
+      tokenizer.selectNext(); // Consume operator
+      return parseFactor();
+    } else if (tokenizer.next.type == TokenType.openParen) {
+      tokenizer.selectNext(); // Consume '('
+      int result = parseExpression();
+      if (tokenizer.next.type != TokenType.closeParen) {
+        throw FormatException("Expected ')' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume ')'
+      return result;
+    } else {
+      throw FormatException("Expected number but found ${tokenizer.next.type}");
+    }
+  }
+
+  int run() {
+    return parseExpression();
   }
 }
 
 void main(List<String> args) {
-  Parser parser = Parser();
-  parser.run(args[0]);
+  if (args.isEmpty) {
+    throw ArgumentError('Please provide an expression to parse');
+  }
+  try {
+    final parser = Parser(args[0]);
+    final result = parser.run();
+    print(result);
+  } catch (e) {
+    throw FormatException('Error parsing expression: $e');
+  }
 }
