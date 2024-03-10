@@ -151,14 +151,13 @@ class Parser {
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    print('No expression provided');
-    return;
+    throw ArgumentError('Please provide an expression to parse');
   }
   try {
     final parser = Parser(args[0]);
     final result = parser.run();
-    print(result);
+    stdout.writeln(result);
   } catch (e) {
-    print('Error parsing expression: $e');
+    throw Exception(e);
   }
 }
