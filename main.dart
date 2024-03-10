@@ -8,7 +8,7 @@ enum TokenType {
   divide,
   eof,
   openParen,
-  closeParen
+  closeParen,
 }
 
 class Token {
@@ -120,10 +120,7 @@ class Parser {
       int value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return value;
-    }
-
-    // in Case of unary minus
-    else if (tokenizer.next.type == TokenType.minus) {
+    } else if (tokenizer.next.type == TokenType.minus) {
       tokenizer.selectNext(); // Consume operator
       return -parseFactor();
     } else if (tokenizer.next.type == TokenType.plus) {
@@ -143,19 +140,25 @@ class Parser {
   }
 
   int run() {
-    return parseExpression();
+    int result = parseExpression();
+    if (tokenizer.next.type != TokenType.eof) {
+      throw FormatException(
+          'Unexpected token ${tokenizer.next.type} at the end of the expression');
+    }
+    return result;
   }
 }
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    throw ArgumentError('Please provide an expression to parse');
+    print('No expression provided');
+    return;
   }
   try {
     final parser = Parser(args[0]);
     final result = parser.run();
     print(result);
   } catch (e) {
-    throw FormatException('Error parsing expression: $e');
+    print('Error parsing expression: $e');
   }
 }
