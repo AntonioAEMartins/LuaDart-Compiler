@@ -304,6 +304,7 @@ void main(List<String> args) {
     throw ArgumentError('Please provide an expression to parse');
   }
   PrePro prePro = PrePro();
+  print("Original: ${args[0]}");
   String filtered = prePro.filter(args[0]);
   try {
     print("Filtered: $filtered");
