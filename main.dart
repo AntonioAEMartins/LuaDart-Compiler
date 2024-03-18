@@ -68,8 +68,9 @@ class Tokenizer {
           next = Token(TokenType.integer, number);
           return;
         } else {
-          throw FormatException(
-              'Unexpected character $char at position $position');
+          // throw FormatException(
+          //     'Unexpected character $char at position $position');
+          // 
         }
     }
     position++;
