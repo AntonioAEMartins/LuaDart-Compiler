@@ -164,8 +164,8 @@ class Parser {
         tokenizer.next.type == TokenType.minus) {
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
-      Node right = parseTerm();
-      result = BinOp(result, right, operator.toString());
+      Node left = parseTerm();
+      result = BinOp(left, result, operator.toString());
     }
     return result;
   }
@@ -176,8 +176,8 @@ class Parser {
         tokenizer.next.type == TokenType.divide) {
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
-      Node right = parseFactor();
-      result = BinOp(result, right, operator.toString());
+      Node left = parseFactor();
+      result = BinOp(left, result, operator.toString());
     }
     return result;
   }
@@ -244,13 +244,13 @@ class BinOp extends Node {
   dynamic Evaluate() {
     switch (value) {
       case "TokenType.plus":
-        return left.Evaluate() + right.Evaluate();
+        return right.Evaluate() + left.Evaluate();
       case "TokenType.minus":
-        return left.Evaluate() - right.Evaluate();
+        return right.Evaluate() - left.Evaluate();
       case "TokenType.multiply":
-        return left.Evaluate() * right.Evaluate();
+        return right.Evaluate() * left.Evaluate();
       case "TokenType.divide":
-        return left.Evaluate() ~/ right.Evaluate();
+        return right.Evaluate() ~/ left.Evaluate();
       default:
         throw Exception('Invalid operator: $value');
     }
@@ -296,6 +296,7 @@ void main(List<String> args) {
   PrePro prePro = PrePro();
   String filtered = prePro.filter(args[0]);
   try {
+    print(filtered);
     final parser = Parser(filtered);
     final ast = parser.run();
     final result = ast.Evaluate();
