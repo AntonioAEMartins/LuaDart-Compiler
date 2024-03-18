@@ -306,7 +306,7 @@ void main(List<String> args) {
   PrePro prePro = PrePro();
   String filtered = prePro.filter(args[0]);
   try {
-    print(filtered);
+    print("Filtered: $filtered");
     final parser = Parser(filtered);
     final ast = parser.run();
     final result = ast.Evaluate();
