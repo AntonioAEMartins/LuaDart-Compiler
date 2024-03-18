@@ -218,6 +218,7 @@ class Parser {
 
 class PrePro {
   String filter(String source) {
+    source = source.replaceAll(RegExp(r'\n'), ' ');
     return source.replaceAll(RegExp(r'--.*'), '');
   }
 }
