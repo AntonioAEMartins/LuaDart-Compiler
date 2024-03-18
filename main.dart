@@ -187,12 +187,11 @@ class Parser {
       int value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
-    } else if (tokenizer.next.type == TokenType.minus) {
+    } else if (tokenizer.next.type == TokenType.minus ||
+        tokenizer.next.type == TokenType.plus) {
+      var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
-      return UnOp(parseFactor(), '-');
-    } else if (tokenizer.next.type == TokenType.plus) {
-      tokenizer.selectNext(); // Consume operator
-      return UnOp(parseFactor(), '+');
+      return UnOp(parseFactor(), operator == TokenType.minus ? '-' : '+');
     } else if (tokenizer.next.type == TokenType.openParen) {
       tokenizer.selectNext(); // Consume '('
       Node result = parseExpression();
