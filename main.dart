@@ -187,11 +187,12 @@ class Parser {
       int value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
-    } else if (tokenizer.next.type == TokenType.minus ||
-        tokenizer.next.type == TokenType.plus) {
-      var operator = tokenizer.next.type;
+    } else if (tokenizer.next.type == TokenType.minus) {
       tokenizer.selectNext(); // Consume operator
-      return UnOp(parseFactor(), operator == TokenType.minus ? '-' : '+');
+      return UnOp(parseFactor(), '-');
+    } else if (tokenizer.next.type == TokenType.plus) {
+      tokenizer.selectNext(); // Consume operator
+      return UnOp(parseFactor(), '+');
     } else if (tokenizer.next.type == TokenType.openParen) {
       tokenizer.selectNext(); // Consume '('
       Node result = parseExpression();
@@ -201,7 +202,9 @@ class Parser {
       tokenizer.selectNext(); // Consume ')'
       return result;
     } else {
-      throw FormatException("Expected number but found ${tokenizer.next.type}");
+      // throw FormatException("Expected number but found ${tokenizer.next.type}");
+      // if the token is not a number, check if it is a division or multiplication
+      return NoOp();
     }
   }
 
