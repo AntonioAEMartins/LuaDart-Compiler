@@ -70,7 +70,7 @@ class Tokenizer {
         } else {
           // throw FormatException(
           //     'Unexpected character $char at position $position');
-          // 
+          //
         }
     }
     position++;
@@ -212,8 +212,8 @@ class Parser {
   Node run() {
     Node result = parseExpression();
     if (tokenizer.next.type != TokenType.eof) {
-      throw FormatException(
-          'Unexpected token ${tokenizer.next.type} at the end of the expression');
+      // throw FormatException(
+      //     'Unexpected token ${tokenizer.next.type} at the end of the expression');
     }
     return result;
   }
