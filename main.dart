@@ -304,10 +304,10 @@ void main(List<String> args) {
     throw ArgumentError('Please provide an expression to parse');
   }
   PrePro prePro = PrePro();
-  print("Original: ${args[0]}");
-  String filtered = prePro.filter(args[0]);
+  final file = File(args[0]);
+  final content = file.readAsStringSync();
+  final filtered = prePro.filter(content);
   try {
-    print("Filtered: $filtered");
     final parser = Parser(filtered);
     final ast = parser.run();
     final result = ast.Evaluate();
