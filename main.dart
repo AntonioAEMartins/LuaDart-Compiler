@@ -216,10 +216,18 @@ class Parser {
   }
 }
 
+String cleanInput(String input) {
+  // Regex que identifica caracteres inválidos
+  RegExp invalidCharacters = RegExp(r'[^0-9+\-*/\(\)\s]');
+  // Remove caracteres inválidos da entrada
+  return input.replaceAll(invalidCharacters, '');
+}
+
 class PrePro {
   String filter(String source) {
+    // Remove comentários iniciados por --
     String noComments = source.replaceAll(RegExp(r'--.*'), '');
-    String cleaned = noComments.replaceAll(RegExp(r'\s+'), '');
+    String cleaned = cleanInput(noComments);
     return cleaned;
   }
 }
@@ -298,6 +306,7 @@ void main(List<String> args) {
   PrePro prePro = PrePro();
   String filtered = prePro.filter(args[0]);
   try {
+    print(filtered);
     final parser = Parser(filtered);
     final ast = parser.run();
     final result = ast.Evaluate();
