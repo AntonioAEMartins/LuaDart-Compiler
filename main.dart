@@ -68,9 +68,8 @@ class Tokenizer {
           next = Token(TokenType.integer, number);
           return;
         } else {
-          // throw FormatException(
-          //     'Unexpected character $char at position $position');
-          //
+          throw FormatException(
+              'Unexpected character $char at position $position');
         }
     }
     position++;
@@ -203,17 +202,15 @@ class Parser {
       tokenizer.selectNext(); // Consume ')'
       return result;
     } else {
-      // throw FormatException("Expected number but found ${tokenizer.next.type}");
-      // if the token is not a number, check if it is a division or multiplication
-      return NoOp();
+      throw FormatException("Expected number but found ${tokenizer.next.type}");
     }
   }
 
   Node run() {
     Node result = parseExpression();
     if (tokenizer.next.type != TokenType.eof) {
-      // throw FormatException(
-      //     'Unexpected token ${tokenizer.next.type} at the end of the expression');
+      throw FormatException(
+          'Unexpected token ${tokenizer.next.type} at the end of the expression');
     }
     return result;
   }
@@ -221,8 +218,9 @@ class Parser {
 
 class PrePro {
   String filter(String source) {
-    source = source.replaceAll(RegExp(r'\n'), ' ');
-    return source.replaceAll(RegExp(r'--.*'), '');
+    String noComments = source.replaceAll(RegExp(r'--.*'), '');
+    String cleaned = noComments.replaceAll(RegExp(r'\s+'), '');
+    return cleaned;
   }
 }
 
@@ -300,7 +298,6 @@ void main(List<String> args) {
   PrePro prePro = PrePro();
   String filtered = prePro.filter(args[0]);
   try {
-    print(filtered);
     final parser = Parser(filtered);
     final ast = parser.run();
     final result = ast.Evaluate();
