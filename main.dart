@@ -10,13 +10,13 @@ class SymbolTable {
 
   static SymbolTable get instance => _instance;
 
-  final Map<String, int> _table = {};
+  final Map<String, double> _table = {};
 
-  void set(String key, int value) {
+  void set(String key, double value) {
     _table[key] = value;
   }
 
-  int? get(String key) {
+  double? get(String key) {
     return _table[key];
   }
 }
@@ -44,7 +44,7 @@ class Parser {
     if (tokenizer.next.type == TokenType.identifier) {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
-      
+
       if (tokenizer.next.type == TokenType.equal) {
         tokenizer.selectNext();
         final Node expression = parseExpression();
@@ -55,14 +55,7 @@ class Parser {
       }
     } else if (tokenizer.next.type == TokenType.print) {
       tokenizer.selectNext();
-
       final Node expression = parseExpression();
-
-      if (tokenizer.next.type != TokenType.closeParen &&
-          tokenizer.next.type != TokenType.eof) {
-        throw FormatException("Expected ')' but found ${tokenizer.next.type}");
-      }
-      tokenizer.selectNext();
       return PrintOp(expression);
     }
     return NoOp();
@@ -75,7 +68,6 @@ class Parser {
       if (tokenizer.next.type == TokenType.closeParen) {
         throw FormatException("The block is not closed");
       }
-      print(tokenizer.next.type);
       result.children.add(statement());
     }
     return result;
@@ -95,7 +87,7 @@ class Parser {
 
   Node parseFactor() {
     if (tokenizer.next.type == TokenType.integer) {
-      int value = tokenizer.next.value;
+      double value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
     } else if (tokenizer.next.type == TokenType.minus) {

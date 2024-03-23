@@ -49,7 +49,7 @@ class UnOp extends Node {
 }
 
 class IntVal extends Node {
-  IntVal(int value) : super(value);
+  IntVal(double value) : super(value);
 
   @override
   dynamic Evaluate(SymbolTable _table) {
@@ -82,7 +82,6 @@ class Identifier extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    print("Identifier: $name");
     if (_table.get(name) == null) {
       throw Exception('Undefined variable: $name');
     }
