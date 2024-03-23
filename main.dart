@@ -132,7 +132,7 @@ void main(List<String> args) {
     final parser = Parser(filtered);
     final ast = parser.run();
     final result = ast.Evaluate(table);
-    stdout.writeln(result);
+    if (result != null) stdout.writeln(result);
   } catch (e) {
     throw Exception(e);
   }
