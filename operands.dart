@@ -83,7 +83,9 @@ class Identifier extends Node {
   @override
   dynamic Evaluate(SymbolTable _table) {
     print("Identifier: $name");
-    print("Value: ${_table.get(name)}");
+    if (_table.get(name) == null) {
+      throw Exception('Undefined variable: $name');
+    }
     return _table.get(name);
   }
 }
