@@ -71,15 +71,6 @@ class Tokenizer {
             position++;
           }
 
-          bool? futureBool;
-
-          try {
-            futureBool = source[position + 1].contains(RegExp(r'^[a-zA-Z_=]'));
-          } catch (e) {}
-          if (futureBool == true) {
-            throw FormatException(
-                "Invalid character '${source[position]}' after number '$start'");
-          }
           if (position < source.length &&
               source[position].contains(RegExp(r'^[a-zA-Z_]'))) {
             throw FormatException(

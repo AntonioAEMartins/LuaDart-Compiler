@@ -131,6 +131,7 @@ void main(List<String> args) {
     final SymbolTable table = SymbolTable.instance;
     final parser = Parser(filtered);
     final ast = parser.run();
+    if (ast.children.isEmpty) throw Exception('No statements found');
     final result = ast.Evaluate(table);
     if (result != null) stdout.writeln(result);
   } catch (e) {
