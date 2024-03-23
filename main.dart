@@ -1,78 +1,23 @@
 import 'dart:io';
+import 'filters.dart';
+import 'operands.dart';
+import 'tonekizer.dart';
 
-enum TokenType {
-  integer,
-  plus,
-  minus,
-  multiply,
-  divide,
-  eof,
-  openParen,
-  closeParen,
-}
+class SymbolTable {
+  SymbolTable._privateConstructor();
 
-class Token {
-  final TokenType type;
-  final int value;
+  static final SymbolTable _instance = SymbolTable._privateConstructor();
 
-  Token(this.type, this.value);
-}
+  static SymbolTable get instance => _instance;
 
-class Tokenizer {
-  final String source;
-  int position = 0;
-  late Token next;
+  final Map<String, int> _table = {};
 
-  Tokenizer(this.source) {
-    selectNext();
+  void set(String key, int value) {
+    _table[key] = value;
   }
 
-  void selectNext() {
-    while (position < source.length && source[position].trim().isEmpty) {
-      position++;
-    }
-
-    if (position == source.length) {
-      next = Token(TokenType.eof, 0);
-      return;
-    }
-
-    final char = source[position];
-    switch (char) {
-      case '+':
-        next = Token(TokenType.plus, 0);
-        break;
-      case '-':
-        next = Token(TokenType.minus, 0);
-        break;
-      case '*':
-        next = Token(TokenType.multiply, 0);
-        break;
-      case '/':
-        next = Token(TokenType.divide, 0);
-        break;
-      case '(':
-        next = Token(TokenType.openParen, 0);
-        break;
-      case ')':
-        next = Token(TokenType.closeParen, 0);
-        break;
-      default:
-        if (char.contains(RegExp(r'\d'))) {
-          final start = position;
-          while (position < source.length &&
-              source[position].contains(RegExp(r'\d'))) {
-            position++;
-          }
-          final number = int.parse(source.substring(start, position));
-          next = Token(TokenType.integer, number);
-          return;
-        } else {
-          throw FormatException(
-              'Unexpected character $char at position $position');
-        }
-    }
-    position++;
+  int? get(String key) {
+    return _table[key];
   }
 }
 
@@ -89,8 +34,44 @@ class Parser {
         tokenizer.next.type == TokenType.minus) {
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
-      Node left = parseTerm();
-      result = BinOp(left, result, operator.toString());
+      Node right = parseTerm();
+      result = BinOp(result, right, operator.toString());
+    }
+    return result;
+  }
+
+  Node statement() {
+    print("Statement: ${tokenizer.next.type}");
+    if (tokenizer.next.type == TokenType.identifier) {
+      final Token identifier = tokenizer.next;
+      tokenizer.selectNext();
+      if (tokenizer.next.type == TokenType.equal) {
+        tokenizer.selectNext();
+        final Node expression = parseExpression();
+        final Identifier id = Identifier(identifier.value);
+        return AssignOp(id, expression);
+      } else {
+        throw FormatException("Expected '=' but found ${tokenizer.next.type}");
+      }
+    } else if (tokenizer.next.type == TokenType.print) {
+      tokenizer.selectNext();
+
+      final Node expression = parseExpression();
+
+      if (tokenizer.next.type != TokenType.closeParen &&
+          tokenizer.next.type != TokenType.eof) {
+        throw FormatException("Expected ')' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext();
+      return PrintOp(expression);
+    }
+    return NoOp();
+  }
+
+  Node block() {
+    Node result = Block();
+    while (tokenizer.next.type != TokenType.eof) {
+      result.children.add(statement());
     }
     return result;
   }
@@ -101,8 +82,8 @@ class Parser {
         tokenizer.next.type == TokenType.divide) {
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
-      Node left = parseFactor();
-      result = BinOp(left, result, operator.toString());
+      Node right = parseFactor();
+      result = BinOp(result, right, operator.toString());
     }
     return result;
   }
@@ -126,98 +107,18 @@ class Parser {
       }
       tokenizer.selectNext(); // Consume ')'
       return result;
+    } else if (tokenizer.next.type == TokenType.identifier) {
+      final Token identifier = tokenizer.next;
+      tokenizer.selectNext();
+      return Identifier(identifier.value);
     } else {
       throw FormatException("Expected number but found ${tokenizer.next.type}");
     }
   }
 
   Node run() {
-    Node result = parseExpression();
-    if (tokenizer.next.type != TokenType.eof) {
-      throw FormatException(
-          'Unexpected token ${tokenizer.next.type} at the end of the expression');
-    }
+    Node result = block();
     return result;
-  }
-}
-
-String cleanInput(String input) {
-  RegExp invalidCharacters = RegExp(r'[^0-9+\-*/\(\)\s]');
-  return input.replaceAll(invalidCharacters, '');
-}
-
-class PrePro {
-  String filter(String source) {
-    String noComments = source.replaceAll(RegExp(r'--.*'), '');
-    String cleaned = cleanInput(noComments);
-    return cleaned;
-  }
-}
-
-abstract class Node {
-  dynamic value;
-  List<Node> children = [];
-  Node(this.value);
-
-  dynamic Evaluate() {
-    for (var child in children) {
-      child.Evaluate();
-    }
-    ;
-  }
-}
-
-class BinOp extends Node {
-  final Node left;
-  final Node right;
-  BinOp(this.left, this.right, String op) : super(op);
-
-  @override
-  dynamic Evaluate() {
-    switch (value) {
-      case "TokenType.plus":
-        return right.Evaluate() + left.Evaluate();
-      case "TokenType.minus":
-        return right.Evaluate() - left.Evaluate();
-      case "TokenType.multiply":
-        return right.Evaluate() * left.Evaluate();
-      case "TokenType.divide":
-        return right.Evaluate() ~/ left.Evaluate();
-      default:
-        throw Exception('Invalid operator: $value');
-    }
-  }
-}
-
-class UnOp extends Node {
-  final Node expr;
-  UnOp(this.expr, String op) : super(op);
-
-  @override
-  dynamic Evaluate() {
-    if (value == '-') {
-      return -expr.Evaluate();
-    } else {
-      return expr.Evaluate();
-    }
-  }
-}
-
-class IntVal extends Node {
-  IntVal(int value) : super(value);
-
-  @override
-  dynamic Evaluate() {
-    return value;
-  }
-}
-
-class NoOp extends Node {
-  NoOp() : super(null);
-
-  @override
-  dynamic Evaluate() {
-    return null;
   }
 }
 
@@ -230,9 +131,12 @@ void main(List<String> args) {
   final content = file.readAsStringSync();
   final filtered = prePro.filter(content);
   try {
+    final SymbolTable table = SymbolTable.instance;
     final parser = Parser(filtered);
     final ast = parser.run();
-    final result = ast.Evaluate();
+    print("AST: $ast");
+    print("Children: ${ast.children}");
+    final result = ast.Evaluate(table);
     stdout.writeln(result);
   } catch (e) {
     throw Exception(e);
