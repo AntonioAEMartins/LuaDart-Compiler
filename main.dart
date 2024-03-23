@@ -44,6 +44,7 @@ class Parser {
     if (tokenizer.next.type == TokenType.identifier) {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
+      
       if (tokenizer.next.type == TokenType.equal) {
         tokenizer.selectNext();
         final Node expression = parseExpression();
@@ -69,10 +70,12 @@ class Parser {
 
   Node block() {
     Node result = Block();
-    while (tokenizer.next.type != TokenType.eof) {
+    while (tokenizer.next.type != TokenType.eof &&
+        tokenizer.next.type != TokenType.integer) {
       if (tokenizer.next.type == TokenType.closeParen) {
         throw FormatException("The block is not closed");
       }
+      print(tokenizer.next.type);
       result.children.add(statement());
     }
     return result;

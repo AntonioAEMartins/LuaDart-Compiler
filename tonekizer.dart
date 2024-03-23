@@ -55,9 +55,11 @@ class Tokenizer {
         next = Token(TokenType.divide, 0);
         break;
       case '(':
+        print("Open Paren");
         next = Token(TokenType.openParen, 0);
         break;
       case ')':
+        print("Close Paren");
         next = Token(TokenType.closeParen, 0);
         break;
       case '=':
@@ -70,6 +72,17 @@ class Tokenizer {
               source[position].contains(RegExp(r'\d'))) {
             position++;
           }
+
+          if (source[position + 1].contains(RegExp(r'^[a-zA-Z_=]'))) {
+            throw FormatException(
+                "Invalid character '${source[position]}' after number '$start'");
+          }
+          if (position < source.length &&
+              source[position].contains(RegExp(r'^[a-zA-Z_]'))) {
+            throw FormatException(
+                "Invalid character '${source[position]}' after number '$start'");
+          }
+
           final number = int.parse(source.substring(start, position));
           next = Token(TokenType.integer, number);
           return;
@@ -85,6 +98,7 @@ class Tokenizer {
           } else {
             next = Token(TokenType.identifier, identifier);
           }
+          return;
         }
     }
     position++;
