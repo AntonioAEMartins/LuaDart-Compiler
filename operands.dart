@@ -72,7 +72,7 @@ class PrintOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    print(expr.Evaluate(_table));
+    print(expr.Evaluate(_table).toStringAsFixed(0));
   }
 }
 
