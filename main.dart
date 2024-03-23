@@ -70,6 +70,9 @@ class Parser {
   Node block() {
     Node result = Block();
     while (tokenizer.next.type != TokenType.eof) {
+      if (tokenizer.next.type == TokenType.closeParen) {
+        throw FormatException("The block is not closed");
+      }
       result.children.add(statement());
     }
     return result;
