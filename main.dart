@@ -41,7 +41,6 @@ class Parser {
   }
 
   Node statement() {
-    print("Statement: ${tokenizer.next.type}");
     if (tokenizer.next.type == TokenType.identifier) {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
@@ -134,8 +133,6 @@ void main(List<String> args) {
     final SymbolTable table = SymbolTable.instance;
     final parser = Parser(filtered);
     final ast = parser.run();
-    print("AST: $ast");
-    print("Children: ${ast.children}");
     final result = ast.Evaluate(table);
     stdout.writeln(result);
   } catch (e) {
