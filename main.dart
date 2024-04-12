@@ -107,11 +107,18 @@ class Parser {
     Node result = Block();
     while (tokenizer.next.type != TokenType.eof) {
       if (tokenizer.next.type == TokenType.closeParen) {
-        throw FormatException("The block is not closed");
+        throw FormatException("The block is not closed, token found: )");
       } else if (tokenizer.next.type == TokenType.endToken) {
-        throw FormatException("The block is not closed");
+        throw FormatException("The block is not closed, token found: end");
       } else if (tokenizer.next.type == TokenType.elseToken) {
-        throw FormatException("The block is not closed");
+        throw FormatException("The block is not closed, token found: else");
+      } else if (tokenizer.next.type == TokenType.doToken) {
+        throw FormatException("The block is not closed, token found: do");
+      } else if (tokenizer.next.type == TokenType.thenToken) {
+        throw FormatException("The block is not closed, token found: then");
+      } else if (tokenizer.next.type == TokenType.integer) {
+        throw FormatException(
+            "The block is not closed, token found: ${tokenizer.next.type}");
       }
       result.children.add(statement());
     }
