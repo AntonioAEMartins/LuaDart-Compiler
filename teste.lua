@@ -1,3 +1,4 @@
+
 x_1 = read()
 
 print(x_1)
@@ -27,7 +28,10 @@ while x_1 < 1 or x == 2 do
     x_1 = x_1 + 1
 end 
 
+
+
 -- Saida final
 print(x_1)
 print(x)
 print(z__+1)
+
