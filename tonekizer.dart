@@ -23,6 +23,7 @@ enum TokenType {
   thenToken,
   whileToken,
   read,
+  lineBreak,
 }
 
 final Map<String, TokenType> keywordTokens = {
@@ -67,6 +68,9 @@ class Tokenizer {
 
     final char = source[position];
     switch (char) {
+      case '\n':
+        next = Token(TokenType.lineBreak, 0);
+        break;
       case '+':
         next = Token(TokenType.plus, 0);
         break;
@@ -126,6 +130,12 @@ class Tokenizer {
           final identifier = source.substring(start, position);
           if (keywordTokens.containsKey(identifier)) {
             TokenType type = keywordTokens[identifier]!;
+            if (type == TokenType.thenToken) {
+              if (position < source.length && source[position] != '\n') {
+                throw FormatException(
+                    "Expected line break after 'then' but found '${source[position]}'");
+              }
+            }
             next = Token(type, identifier);
           } else {
             next = Token(TokenType.identifier, identifier);

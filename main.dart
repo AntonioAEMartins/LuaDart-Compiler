@@ -44,7 +44,6 @@ class Parser {
     if (tokenizer.next.type == TokenType.identifier) {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
-
       if (tokenizer.next.type == TokenType.equal) {
         tokenizer.selectNext();
         final Node expression = parseExpression();
@@ -100,6 +99,7 @@ class Parser {
       tokenizer.selectNext(); // Consume 'end'
       return IfOp(condition, block, null);
     }
+    tokenizer.selectNext();
     return NoOp();
   }
 
