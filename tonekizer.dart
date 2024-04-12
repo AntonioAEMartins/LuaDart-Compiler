@@ -34,6 +34,9 @@ final Map<String, TokenType> keywordTokens = {
   'then': TokenType.thenToken,
   'while': TokenType.whileToken,
   'end': TokenType.endToken,
+  'not': TokenType.not,
+  'or': TokenType.or,
+  'and': TokenType.and,
 };
 
 class Token {
@@ -96,15 +99,6 @@ class Tokenizer {
         break;
       case '<':
         next = Token(TokenType.less, 0);
-        break;
-      case '|':
-        next = Token(TokenType.or, 0);
-        break;
-      case '&':
-        next = Token(TokenType.and, 0);
-        break;
-      case '!':
-        next = Token(TokenType.not, 0);
         break;
       default:
         if (char.startsWith(RegExp(r'^\d'))) {

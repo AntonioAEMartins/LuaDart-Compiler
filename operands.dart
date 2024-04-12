@@ -57,6 +57,8 @@ class UnOp extends Node {
         return !expr.Evaluate(_table);
       case "-":
         return -expr.Evaluate(_table);
+      case "+":
+        return expr.Evaluate(_table);
       default:
         throw Exception('Invalid operator: $value');
     }

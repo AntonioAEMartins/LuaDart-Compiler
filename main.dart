@@ -64,8 +64,7 @@ class Parser {
         throw FormatException("Expected 'do' but found ${tokenizer.next.type}");
       }
       tokenizer.selectNext(); // Consume 'do'
-      tokenizer.selectNext(); // Consume '\n'
-      final Node block = this.block();
+      final Node block = this.endBlock();
       if (tokenizer.next.type != TokenType.endToken) {
         throw FormatException(
             "Expected 'end' but found ${tokenizer.next.type}");
@@ -80,11 +79,10 @@ class Parser {
             "Expected 'then' but found ${tokenizer.next.type}");
       }
       tokenizer.selectNext(); // Consume 'then'
-      tokenizer.selectNext(); // Consume '\n'
-      final Node block = this.block();
+      final Node block = this.endBlock();
       if (tokenizer.next.type == TokenType.elseToken) {
         tokenizer.selectNext();
-        final Node elseBlock = this.block();
+        final Node elseBlock = this.endBlock();
         if (tokenizer.next.type != TokenType.endToken) {
           throw FormatException(
               "Expected 'end' but found ${tokenizer.next.type}");
@@ -104,8 +102,20 @@ class Parser {
 
   Node block() {
     Node result = Block();
-    while (tokenizer.next.type != TokenType.eof &&
-        tokenizer.next.type != TokenType.integer) {
+    while (tokenizer.next.type != TokenType.eof) {
+      if (tokenizer.next.type == TokenType.closeParen) {
+        throw FormatException("The block is not closed");
+      }
+      result.children.add(statement());
+    }
+    return result;
+  }
+
+  Node endBlock() {
+    Node result = Block();
+    while (tokenizer.next.type != TokenType.endToken &&
+        tokenizer.next.type != TokenType.elseToken &&
+        tokenizer.next.type != TokenType.eof) {
       if (tokenizer.next.type == TokenType.closeParen) {
         throw FormatException("The block is not closed");
       }
@@ -131,27 +141,27 @@ class Parser {
       double value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
-    } else if (tokenizer.next.type == TokenType.minus) {
-      tokenizer.selectNext(); // Consume operator
-      return UnOp(parseFactor(), '-');
+    } else if (tokenizer.next.type == TokenType.identifier) {
+      final Token identifier = tokenizer.next;
+      tokenizer.selectNext();
+      return Identifier(identifier.value);
     } else if (tokenizer.next.type == TokenType.plus) {
       tokenizer.selectNext(); // Consume operator
       return UnOp(parseFactor(), '+');
+    } else if (tokenizer.next.type == TokenType.minus) {
+      tokenizer.selectNext(); // Consume operator
+      return UnOp(parseFactor(), '-');
+    } else if (tokenizer.next.type == TokenType.not) {
+      tokenizer.selectNext(); // Consume operator
+      return UnOp(parseFactor(), '!');
     } else if (tokenizer.next.type == TokenType.openParen) {
       tokenizer.selectNext(); // Consume '('
-      Node result = parseExpression();
+      Node result = boolExpression();
       if (tokenizer.next.type != TokenType.closeParen) {
         throw FormatException("Expected ')' but found ${tokenizer.next.type}");
       }
       tokenizer.selectNext(); // Consume ')'
       return result;
-    } else if (tokenizer.next.type == TokenType.identifier) {
-      final Token identifier = tokenizer.next;
-      tokenizer.selectNext();
-      return Identifier(identifier.value);
-    } else if (tokenizer.next.type == TokenType.not) {
-      tokenizer.selectNext(); // Consume operator
-      return UnOp(parseFactor(), '!');
     } else if (tokenizer.next.type == TokenType.read) {
       // In lua the read function does not have a parameter
       tokenizer.selectNext(); // Consume operator
