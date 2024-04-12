@@ -136,9 +136,7 @@ class Tokenizer {
                     "Expected line break after 'then' but found '${source[position]}'");
               }
             }
-            // if the keyword is end check if there is other elements in the line
             if (type == TokenType.endToken) {
-              // loop until the end of the line
               while (position < source.length && source[position] != '\n') {
                 if (source[position].trim().isNotEmpty) {
                   throw FormatException(
@@ -146,6 +144,30 @@ class Tokenizer {
                 }
                 position++;
               }
+            }
+            if (type == TokenType.ifToken) {
+              bool found = false;
+              int actualPosition = this.position;
+              while (position < source.length) {
+                if (source[position] == '\n') {
+                  break;
+                }
+                if (source[position].trim().isNotEmpty) {
+                  if (source[position] == 't') {
+                    if (position + 4 < source.length &&
+                        source.substring(position, position + 4) == 'then') {
+                      found = true;
+                      break;
+                    }
+                  }
+                }
+                position++;
+              }
+              if (!found) {
+                throw FormatException(
+                    "Expected 'then' after 'if' but found '${source[position]}'");
+              }
+              this.position = actualPosition;
             }
             next = Token(type, identifier);
           } else {
