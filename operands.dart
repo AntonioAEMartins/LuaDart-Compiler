@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'main.dart';
 
 abstract class Node {
@@ -28,6 +30,16 @@ class BinOp extends Node {
         return left.Evaluate(_table) * right.Evaluate(_table);
       case "TokenType.divide":
         return left.Evaluate(_table) / right.Evaluate(_table);
+      case "TokenType.greater":
+        return left.Evaluate(_table) > right.Evaluate(_table);
+      case "TokenType.less":
+        return left.Evaluate(_table) < right.Evaluate(_table);
+      case "TokenType.equalEqual":
+        return left.Evaluate(_table) == right.Evaluate(_table);
+      case "TokenType.and":
+        return left.Evaluate(_table) && right.Evaluate(_table);
+      case "TokenType.or":
+        return left.Evaluate(_table) || right.Evaluate(_table);
       default:
         throw Exception('Invalid operator: $value');
     }
@@ -40,10 +52,13 @@ class UnOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    if (value == '-') {
-      return -expr.Evaluate(_table);
-    } else {
-      return expr.Evaluate(_table);
+    switch (value) {
+      case "!":
+        return !expr.Evaluate(_table);
+      case "-":
+        return -expr.Evaluate(_table);
+      default:
+        throw Exception('Invalid operator: $value');
     }
   }
 }
@@ -101,13 +116,51 @@ class AssignOp extends Node {
 }
 
 class Block extends Node {
-  
   Block() : super(null);
 
   @override
   dynamic Evaluate(SymbolTable _table) {
     for (var child in children) {
       child.Evaluate(_table);
+    }
+  }
+}
+
+class ReadOp extends Node {
+  ReadOp() : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table) {
+    return double.tryParse(stdin.readLineSync() ?? '');
+  }
+}
+
+class WhileOp extends Node {
+  final Node condition;
+  final Node block;
+  WhileOp(this.condition, this.block) : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table) {
+    while (condition.Evaluate(_table)) {
+      block.Evaluate(_table);
+    }
+  }
+}
+
+class IfOp extends Node {
+  final Node condition;
+  final Node ifOp;
+  final Node? elseOp;
+
+  IfOp(this.condition, this.ifOp, this.elseOp) : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table) {
+    if (condition.Evaluate(_table)) {
+      ifOp.Evaluate(_table);
+    } else {
+      elseOp?.Evaluate(_table);
     }
   }
 }

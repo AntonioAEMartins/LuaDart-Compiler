@@ -57,6 +57,47 @@ class Parser {
       tokenizer.selectNext();
       final Node expression = parseExpression();
       return PrintOp(expression);
+    } else if (tokenizer.next.type == TokenType.whileToken) {
+      tokenizer.selectNext(); // Consume 'while'
+      final Node condition = boolExpression();
+      if (tokenizer.next.type != TokenType.doToken) {
+        throw FormatException("Expected 'do' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume 'do'
+      tokenizer.selectNext(); // Consume '\n'
+      final Node block = this.block();
+      if (tokenizer.next.type != TokenType.endToken) {
+        throw FormatException(
+            "Expected 'end' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume 'end'
+      return WhileOp(condition, block);
+    } else if (tokenizer.next.type == TokenType.ifToken) {
+      tokenizer.selectNext();
+      final Node condition = boolExpression();
+      if (tokenizer.next.type != TokenType.thenToken) {
+        throw FormatException(
+            "Expected 'then' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume 'then'
+      tokenizer.selectNext(); // Consume '\n'
+      final Node block = this.block();
+      if (tokenizer.next.type == TokenType.elseToken) {
+        tokenizer.selectNext();
+        final Node elseBlock = this.block();
+        if (tokenizer.next.type != TokenType.endToken) {
+          throw FormatException(
+              "Expected 'end' but found ${tokenizer.next.type}");
+        }
+        tokenizer.selectNext(); // Consume 'end'
+        return IfOp(condition, block, elseBlock);
+      }
+      if (tokenizer.next.type != TokenType.endToken) {
+        throw FormatException(
+            "Expected 'end' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume 'end'
+      return IfOp(condition, block, null);
     }
     return NoOp();
   }
@@ -108,9 +149,63 @@ class Parser {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
       return Identifier(identifier.value);
+    } else if (tokenizer.next.type == TokenType.not) {
+      tokenizer.selectNext(); // Consume operator
+      return UnOp(parseFactor(), '!');
+    } else if (tokenizer.next.type == TokenType.read) {
+      // In lua the read function does not have a parameter
+      tokenizer.selectNext(); // Consume operator
+      if (tokenizer.next.type != TokenType.openParen) {
+        throw FormatException("Expected '(' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume '('
+      if (tokenizer.next.type != TokenType.closeParen) {
+        throw FormatException("Expected ')' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume ')'
+      return ReadOp();
     } else {
       throw FormatException("Expected number but found ${tokenizer.next.type}");
     }
+  }
+
+  Node boolExpression() {
+    Node result = boolTerm();
+    while (tokenizer.next.type == TokenType.or) {
+      var operator = tokenizer.next.type;
+      tokenizer.selectNext(); // Consume operator
+      Node right = boolTerm();
+      result = BinOp(result, right, operator.toString());
+    }
+    return result;
+  }
+
+  Node boolTerm() {
+    Node result = relExpression();
+    while (tokenizer.next.type == TokenType.and) {
+      var operator = tokenizer.next.type;
+      tokenizer.selectNext(); // Consume operator
+      Node right = relExpression();
+      result = BinOp(result, right, operator.toString());
+    }
+    return result;
+  }
+
+  Node relExpression() {
+    Node result = parseExpression();
+    switch (tokenizer.next.type) {
+      case TokenType.equalEqual:
+      case TokenType.greater:
+      case TokenType.less:
+        var operator = tokenizer.next.type;
+        tokenizer.selectNext(); // Consume operator
+        Node right = parseExpression();
+        result = BinOp(result, right, operator.toString());
+        break;
+      default:
+        break;
+    }
+    return result;
   }
 
   Node run() {

@@ -10,9 +10,31 @@ enum TokenType {
   identifier,
   print,
   equal,
+  or,
+  and,
+  not,
+  greater,
+  less,
+  equalEqual,
+  endToken,
+  ifToken,
+  elseToken,
+  doToken,
+  thenToken,
+  whileToken,
+  read,
 }
 
-List<String> reservedKeywords = ['print'];
+final Map<String, TokenType> keywordTokens = {
+  'print': TokenType.print,
+  'read': TokenType.read,
+  'if': TokenType.ifToken,
+  'else': TokenType.elseToken,
+  'do': TokenType.doToken,
+  'then': TokenType.thenToken,
+  'while': TokenType.whileToken,
+  'end': TokenType.endToken,
+};
 
 class Token {
   final TokenType type;
@@ -61,7 +83,28 @@ class Tokenizer {
         next = Token(TokenType.closeParen, 0);
         break;
       case '=':
-        next = Token(TokenType.equal, 0);
+        // check if next character is '='
+        if (position + 1 < source.length && source[position + 1] == '=') {
+          next = Token(TokenType.equalEqual, 0);
+          position++;
+        } else {
+          next = Token(TokenType.equal, 0);
+        }
+        break;
+      case '>':
+        next = Token(TokenType.greater, 0);
+        break;
+      case '<':
+        next = Token(TokenType.less, 0);
+        break;
+      case '|':
+        next = Token(TokenType.or, 0);
+        break;
+      case '&':
+        next = Token(TokenType.and, 0);
+        break;
+      case '!':
+        next = Token(TokenType.not, 0);
         break;
       default:
         if (char.startsWith(RegExp(r'^\d'))) {
@@ -87,8 +130,9 @@ class Tokenizer {
             position++;
           }
           final identifier = source.substring(start, position);
-          if (reservedKeywords.contains(identifier)) {
-            next = Token(TokenType.print, 0);
+          if (keywordTokens.containsKey(identifier)) {
+            TokenType type = keywordTokens[identifier]!;
+            next = Token(type, identifier);
           } else {
             next = Token(TokenType.identifier, identifier);
           }
