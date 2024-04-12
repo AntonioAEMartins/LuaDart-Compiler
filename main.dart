@@ -49,7 +49,6 @@ class Parser {
         tokenizer.selectNext();
         final Node expression = parseExpression();
         final Identifier id = Identifier(identifier.value);
-        print("Next token: ${tokenizer.next.type}");
         if (tokenizer.next.type == TokenType.equal){
           throw FormatException("Token not expected ${tokenizer.next.type}");
         }
