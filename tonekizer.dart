@@ -136,10 +136,15 @@ class Tokenizer {
                     "Expected line break after 'then' but found '${source[position]}'");
               }
             }
-            else if (type == TokenType.endToken) {
-              if (position < source.length && (source[position] != '\n' && source[position] != " ")) {
-                throw FormatException(
-                    "Expected line break after 'end' but found '${source[position]}'");
+            // if the keyword is end check if there is other elements in the line
+            if (type == TokenType.endToken) {
+              // loop until the end of the line
+              while (position < source.length && source[position] != '\n') {
+                if (source[position].trim().isNotEmpty) {
+                  throw FormatException(
+                      "Expected line break after 'end' but found '${source[position]}'");
+                }
+                position++;
               }
             }
             next = Token(type, identifier);
