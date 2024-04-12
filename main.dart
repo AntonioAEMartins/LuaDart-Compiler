@@ -49,7 +49,7 @@ class Parser {
         tokenizer.selectNext();
         final Node expression = parseExpression();
         final Identifier id = Identifier(identifier.value);
-        if (tokenizer.next.type == TokenType.equal){
+        if (tokenizer.next.type == TokenType.equal) {
           throw FormatException("Token not expected ${tokenizer.next.type}");
         }
         return AssignOp(id, expression);
@@ -107,6 +107,10 @@ class Parser {
     Node result = Block();
     while (tokenizer.next.type != TokenType.eof) {
       if (tokenizer.next.type == TokenType.closeParen) {
+        throw FormatException("The block is not closed");
+      } else if (tokenizer.next.type == TokenType.endToken) {
+        throw FormatException("The block is not closed");
+      } else if (tokenizer.next.type == TokenType.elseToken) {
         throw FormatException("The block is not closed");
       }
       result.children.add(statement());
