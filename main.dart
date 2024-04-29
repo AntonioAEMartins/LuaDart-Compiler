@@ -282,7 +282,8 @@ void main(List<String> args) {
       stdout.writeln(result);
     }
   } catch (e, s) {
-    print('Error: ${e.toString()}');
-    print('Stack Trace:\n$s');
+    // print('Error: ${e.toString()}');
+    // print('Stack Trace:\n$s');
+    throw e;
   }
 }
