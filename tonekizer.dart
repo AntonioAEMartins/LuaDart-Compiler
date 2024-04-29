@@ -1,5 +1,6 @@
 enum TokenType {
   integer,
+  string,
   plus,
   minus,
   multiply,
@@ -23,7 +24,9 @@ enum TokenType {
   thenToken,
   whileToken,
   read,
+  local,
   lineBreak,
+  concat,
 }
 
 final Map<String, TokenType> keywordTokens = {
@@ -38,6 +41,7 @@ final Map<String, TokenType> keywordTokens = {
   'not': TokenType.not,
   'or': TokenType.or,
   'and': TokenType.and,
+  'local': TokenType.local,
 };
 
 class Token {
@@ -57,7 +61,7 @@ class Tokenizer {
   }
 
   void selectNext() {
-    while (position < source.length && source[position].trim().isEmpty) {
+    while (position < source.length && " \t".contains(source[position])) {
       position++;
     }
 
@@ -70,58 +74,75 @@ class Tokenizer {
     switch (char) {
       case '\n':
         next = Token(TokenType.lineBreak, 0);
+        position++;
         break;
       case '+':
         next = Token(TokenType.plus, 0);
+        position++;
         break;
       case '-':
         next = Token(TokenType.minus, 0);
+        position++;
         break;
       case '*':
         next = Token(TokenType.multiply, 0);
+        position++;
         break;
       case '/':
         next = Token(TokenType.divide, 0);
+        position++;
         break;
       case '(':
         next = Token(TokenType.openParen, 0);
+        position++;
         break;
       case ')':
         next = Token(TokenType.closeParen, 0);
+        position++;
         break;
       case '=':
-        // check if next character is '='
         if (position + 1 < source.length && source[position + 1] == '=') {
           next = Token(TokenType.equalEqual, 0);
-          position++;
+          position += 2;
         } else {
           next = Token(TokenType.equal, 0);
+          position++;
         }
         break;
       case '>':
         next = Token(TokenType.greater, 0);
+        position++;
         break;
       case '<':
         next = Token(TokenType.less, 0);
+        position++;
+        break;
+      case '.':
+        if (position + 1 < source.length && source[position + 1] == '.') {
+          next = Token(TokenType.concat, 0);
+          position += 2; // Move beyond the ".."
+        } else {
+          throw FormatException(
+              "Unrecognized character '.' at position $position");
+        }
+        break;
+      case '"':
+      case '\'':
+        final delimiter = char;
+        position++;
+        final start = position;
+        while (position < source.length && source[position] != delimiter) {
+          position++;
+        }
+        if (position >= source.length) {
+          throw FormatException("String not closed");
+        }
+        final stringValue = source.substring(start, position);
+        next = Token(TokenType.string, stringValue);
+        position++;
         break;
       default:
-        if (char.startsWith(RegExp(r'^\d'))) {
-          final start = position;
-          while (position < source.length &&
-              source[position].contains(RegExp(r'\d'))) {
-            position++;
-          }
-
-          if (position < source.length &&
-              source[position].contains(RegExp(r'^[a-zA-Z_]'))) {
-            throw FormatException(
-                "Invalid character '${source[position]}' after number '$start'");
-          }
-
-          final number = double.parse(source.substring(start, position));
-          next = Token(TokenType.integer, number);
-          return;
-        } else {
+        if (char.startsWith(RegExp(r'[a-zA-Z_]'))) {
           final start = position;
           while (position < source.length &&
               source[position].contains(RegExp(r'^[a-zA-Z0-9_]+$'))) {
@@ -129,53 +150,23 @@ class Tokenizer {
           }
           final identifier = source.substring(start, position);
           if (keywordTokens.containsKey(identifier)) {
-            TokenType type = keywordTokens[identifier]!;
-            if (type == TokenType.thenToken) {
-              if (position < source.length && source[position] != '\n') {
-                throw FormatException(
-                    "Expected line break after 'then' but found '${source[position]}'");
-              }
-            }
-            if (type == TokenType.endToken) {
-              while (position < source.length && source[position] != '\n') {
-                if (source[position].trim().isNotEmpty) {
-                  throw FormatException(
-                      "Expected line break after 'end' but found '${source[position]}'");
-                }
-                position++;
-              }
-            }
-            if (type == TokenType.ifToken) {
-              bool found = false;
-              int actualPosition = this.position;
-              while (position < source.length) {
-                if (source[position] == '\n') {
-                  break;
-                }
-                if (source[position].trim().isNotEmpty) {
-                  if (source[position] == 't') {
-                    if (position + 4 < source.length &&
-                        source.substring(position, position + 4) == 'then') {
-                      found = true;
-                      break;
-                    }
-                  }
-                }
-                position++;
-              }
-              if (!found) {
-                throw FormatException(
-                    "Expected 'then' after 'if' but found '${source[position]}'");
-              }
-              this.position = actualPosition;
-            }
-            next = Token(type, identifier);
+            next = Token(keywordTokens[identifier]!, identifier);
           } else {
             next = Token(TokenType.identifier, identifier);
           }
-          return;
+        } else if (char.startsWith(RegExp(r'^\d'))) {
+          final start = position;
+          while (position < source.length &&
+              source[position].contains(RegExp(r'\d'))) {
+            position++;
+          }
+          final number = double.parse(source.substring(start, position));
+          next = Token(TokenType.integer, number);
+        } else {
+          throw FormatException(
+              "Unrecognized character '$char' at position $position");
         }
+        break;
     }
-    position++;
   }
 }

@@ -10,14 +10,19 @@ class SymbolTable {
 
   static SymbolTable get instance => _instance;
 
-  final Map<String, double> _table = {};
+  final Map<String, Map<String, dynamic>> _table = {};
 
-  void set(String key, double value) {
-    _table[key] = value;
+  void set(
+      {required String key, required dynamic value, required dynamic type}) {
+    _table[key] = {'value': value, 'type': type};
   }
 
-  double? get(String key) {
-    return _table[key];
+  ({dynamic value, String type}) get(String key) {
+    final value = _table[key];
+    if (value == null) {
+      throw Exception('Undefined variable: $key');
+    }
+    return (value: value['value'], type: value['type']);
   }
 }
 
@@ -31,7 +36,8 @@ class Parser {
   Node parseExpression() {
     Node result = parseTerm();
     while (tokenizer.next.type == TokenType.plus ||
-        tokenizer.next.type == TokenType.minus) {
+        tokenizer.next.type == TokenType.minus ||
+        tokenizer.next.type == TokenType.concat) {
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
       Node right = parseTerm();
@@ -55,6 +61,28 @@ class Parser {
       } else {
         throw FormatException("Expected '=' but found ${tokenizer.next.type}");
       }
+    } else if (tokenizer.next.type == TokenType.local) {
+      tokenizer.selectNext();
+      if (tokenizer.next.type != TokenType.identifier) {
+        throw FormatException(
+            "Expected identifier but found ${tokenizer.next.type}");
+      }
+      final Token identifier = tokenizer.next;
+      final Identifier id = Identifier(identifier.value);
+      tokenizer.selectNext();
+      if (tokenizer.next.type == TokenType.lineBreak) {
+        return AssignOp(id, NullOp());
+      }
+      if (tokenizer.next.type != TokenType.equal) {
+        throw FormatException("Expected '=' but found ${tokenizer.next.type}");
+      }
+      tokenizer.selectNext(); // Consume '='
+      final Node expression = boolExpression();
+
+      if (tokenizer.next.type == TokenType.equal) {
+        throw FormatException("Token not expected ${tokenizer.next.type}");
+      }
+      return AssignOp(id, expression);
     } else if (tokenizer.next.type == TokenType.print) {
       tokenizer.selectNext();
       final Node expression = parseExpression();
@@ -105,23 +133,15 @@ class Parser {
 
   Node block() {
     Node result = Block();
-    while (tokenizer.next.type != TokenType.eof) {
-      if (tokenizer.next.type == TokenType.closeParen) {
-        throw FormatException("The block is not closed, token found: )");
-      } else if (tokenizer.next.type == TokenType.endToken) {
-        throw FormatException("The block is not closed, token found: end");
-      } else if (tokenizer.next.type == TokenType.elseToken) {
-        throw FormatException("The block is not closed, token found: else");
-      } else if (tokenizer.next.type == TokenType.doToken) {
-        throw FormatException("The block is not closed, token found: do");
-      } else if (tokenizer.next.type == TokenType.thenToken) {
-        throw FormatException("The block is not closed, token found: then");
-      } else if (tokenizer.next.type == TokenType.integer) {
-        throw FormatException(
-            "The block is not closed, token found: ${tokenizer.next.type}");
-      }
+    while (tokenizer.next.type != TokenType.eof &&
+        tokenizer.next.type != TokenType.endToken) {
       result.children.add(statement());
     }
+
+    if (tokenizer.next.type == TokenType.endToken) {
+      tokenizer.selectNext();
+    }
+
     return result;
   }
 
@@ -159,6 +179,10 @@ class Parser {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
       return Identifier(identifier.value);
+    } else if (tokenizer.next.type == TokenType.string) {
+      final String value = tokenizer.next.value;
+      tokenizer.selectNext(); // Consume string
+      return StringVal(value);
     } else if (tokenizer.next.type == TokenType.plus) {
       tokenizer.selectNext(); // Consume operator
       return UnOp(parseFactor(), '+');
@@ -250,10 +274,15 @@ void main(List<String> args) {
     final SymbolTable table = SymbolTable.instance;
     final parser = Parser(filtered);
     final ast = parser.run();
-    if (ast.children.isEmpty) throw Exception('No statements found');
+    if (ast.children.isEmpty) {
+      throw Exception('No statements found');
+    }
     final result = ast.Evaluate(table);
-    if (result != null) stdout.writeln(result);
-  } catch (e) {
-    throw Exception(e);
+    if (result != null) {
+      stdout.writeln(result);
+    }
+  } catch (e, s) {
+    print('Error: ${e.toString()}');
+    print('Stack Trace:\n$s');
   }
 }

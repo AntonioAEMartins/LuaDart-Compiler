@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'main.dart';
 
 abstract class Node {
@@ -7,11 +6,7 @@ abstract class Node {
   List<Node> children = [];
   Node(this.value);
 
-  dynamic Evaluate(SymbolTable _table) {
-    for (var child in children) {
-      child.Evaluate(_table);
-    }
-  }
+  dynamic Evaluate(SymbolTable _table);
 }
 
 class BinOp extends Node {
@@ -21,27 +16,100 @@ class BinOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    switch (value) {
-      case "TokenType.plus":
-        return left.Evaluate(_table) + right.Evaluate(_table);
-      case "TokenType.minus":
-        return left.Evaluate(_table) - right.Evaluate(_table);
-      case "TokenType.multiply":
-        return left.Evaluate(_table) * right.Evaluate(_table);
-      case "TokenType.divide":
-        return left.Evaluate(_table) / right.Evaluate(_table);
-      case "TokenType.greater":
-        return left.Evaluate(_table) > right.Evaluate(_table);
-      case "TokenType.less":
-        return left.Evaluate(_table) < right.Evaluate(_table);
-      case "TokenType.equalEqual":
-        return left.Evaluate(_table) == right.Evaluate(_table);
-      case "TokenType.and":
-        return left.Evaluate(_table) && right.Evaluate(_table);
-      case "TokenType.or":
-        return left.Evaluate(_table) || right.Evaluate(_table);
-      default:
-        throw Exception('Invalid operator: $value');
+    var leftResult = left.Evaluate(_table);
+    var rightResult = right.Evaluate(_table);
+
+    // Verificar se os tipos são compatíveis para cada operação
+    if (value == "TokenType.plus") {
+      if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
+        // Concatenação de strings
+        return {
+          'value':
+              leftResult['value'].toString() + rightResult['value'].toString(),
+          'type': 'string'
+        };
+      } else if (leftResult['type'] == 'integer' &&
+          rightResult['type'] == 'integer') {
+        // Soma de inteiros
+        return {
+          'value': leftResult['value'] + rightResult['value'],
+          'type': 'integer'
+        };
+      } else {
+        throw Exception('Type mismatch for + operator');
+      }
+    } else if (value == "TokenType.concat") {
+      if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
+        // Concatenação de strings
+        return {
+          'value':
+              leftResult['value'].toString() + rightResult['value'].toString(),
+          'type': 'string'
+        };
+      } else {
+        throw Exception('Type mismatch for .. operator');
+      }
+    } else if (value == "TokenType.minus" &&
+        leftResult['type'] == 'integer' &&
+        rightResult['type'] == 'integer') {
+      return {
+        'value': leftResult['value'] - rightResult['value'],
+        'type': 'integer'
+      };
+    } else if (value == "TokenType.multiply" &&
+        leftResult['type'] == 'integer' &&
+        rightResult['type'] == 'integer') {
+      return {
+        'value': leftResult['value'] * rightResult['value'],
+        'type': 'integer'
+      };
+    } else if (value == "TokenType.divide" &&
+        leftResult['type'] == 'integer' &&
+        rightResult['type'] == 'integer') {
+      return {
+        'value': leftResult['value'] / rightResult['value'],
+        'type': 'integer'
+      };
+    } else if (value == "TokenType.greater" &&
+        leftResult['type'] == 'integer' &&
+        rightResult['type'] == 'integer') {
+      return {
+        'value': leftResult['value'] > rightResult['value'],
+        'type': 'boolean'
+      };
+    } else if (value == "TokenType.less" &&
+        leftResult['type'] == 'integer' &&
+        rightResult['type'] == 'integer') {
+      return {
+        'value': leftResult['value'] < rightResult['value'],
+        'type': 'boolean'
+      };
+    } else if (value == "TokenType.equalEqual" &&
+        leftResult['type'] == 'integer' &&
+        rightResult['type'] == 'integer') {
+      return {
+        'value': leftResult['value'] == rightResult['value'],
+        'type': 'boolean'
+      };
+    } else if (value == "TokenType.and" &&
+        leftResult['type'] == 'boolean' &&
+        rightResult['type'] == 'boolean') {
+      return {
+        'value': leftResult['value'] && rightResult['value'],
+        'type': 'boolean'
+      };
+    } else if (value == "TokenType.or" &&
+        leftResult['type'] == 'boolean' &&
+        rightResult['type'] == 'boolean') {
+      return {
+        'value': leftResult['value'] || rightResult['value'],
+        'type': 'boolean'
+      };
+    } else {
+      print("leftResult: $leftResult");
+      print("rightResult: $rightResult");
+      print("value: $value");
+      throw Exception('Invalid operator or type mismatch');
     }
   }
 }
@@ -52,21 +120,30 @@ class UnOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    switch (value) {
-      case "!":
-        return !expr.Evaluate(_table);
-      case "-":
-        return -expr.Evaluate(_table);
-      case "+":
-        return expr.Evaluate(_table);
-      default:
-        throw Exception('Invalid operator: $value');
+    var result = expr.Evaluate(_table);
+    if (value == "!" && result['type'] == 'boolean') {
+      return {'value': !result['value'], 'type': 'boolean'};
+    } else if (value == "-" && result['type'] == 'integer') {
+      return {'value': -result['value'], 'type': 'integer'};
+    } else if (value == "+" && result['type'] == 'integer') {
+      return {'value': result['value'], 'type': 'integer'};
+    } else {
+      throw Exception('Invalid unary operator or type mismatch');
     }
   }
 }
 
 class IntVal extends Node {
-  IntVal(double value) : super(value);
+  IntVal(double value) : super({'value': value, 'type': 'integer'});
+
+  @override
+  dynamic Evaluate(SymbolTable _table) {
+    return value;
+  }
+}
+
+class StringVal extends Node {
+  StringVal(String value) : super({'value': value, 'type': 'string'});
 
   @override
   dynamic Evaluate(SymbolTable _table) {
@@ -89,7 +166,8 @@ class PrintOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    print(expr.Evaluate(_table).toStringAsFixed(0));
+    var result = expr.Evaluate(_table);
+    print(result['value'].toString());
   }
 }
 
@@ -99,10 +177,8 @@ class Identifier extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    if (_table.get(name) == null) {
-      throw Exception('Undefined variable: $name');
-    }
-    return _table.get(name);
+    var entry = _table.get(name);
+    return {'value': entry.value, 'type': entry.type};
   }
 }
 
@@ -113,7 +189,11 @@ class AssignOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    _table.set(identifier.name, expr.Evaluate(_table));
+    var exprResult = expr.Evaluate(_table);
+    _table.set(
+        key: identifier.name,
+        value: exprResult['value'],
+        type: exprResult['type']);
   }
 }
 
@@ -133,7 +213,13 @@ class ReadOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    return double.tryParse(stdin.readLineSync() ?? '');
+    var input = stdin.readLineSync() ?? '';
+    try {
+      double number = double.parse(input);
+      return {'value': number, 'type': 'integer'};
+    } catch (e) {
+      return {'value': input, 'type': 'string'};
+    }
   }
 }
 
@@ -144,7 +230,7 @@ class WhileOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    while (condition.Evaluate(_table)) {
+    while (condition.Evaluate(_table)['value']) {
       block.Evaluate(_table);
     }
   }
@@ -159,10 +245,19 @@ class IfOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table) {
-    if (condition.Evaluate(_table)) {
+    if (condition.Evaluate(_table)['value']) {
       ifOp.Evaluate(_table);
     } else {
       elseOp?.Evaluate(_table);
     }
+  }
+}
+
+class NullOp extends Node {
+  NullOp() : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table) {
+    return {"value": null, "type": null};
   }
 }
