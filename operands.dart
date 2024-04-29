@@ -87,7 +87,7 @@ class BinOp extends Node {
         if (leftResult['type'] == 'integer' &&
             rightResult['type'] == 'integer') {
           return {
-            'value': leftResult['value'] / rightResult['value'],
+            'value': leftResult['value'] ~/ rightResult['value'],
             'type': 'integer'
           };
         }
