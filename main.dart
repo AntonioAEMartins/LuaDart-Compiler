@@ -51,7 +51,6 @@ class Parser {
     while (tokenizer.next.type == TokenType.plus ||
         tokenizer.next.type == TokenType.minus ||
         tokenizer.next.type == TokenType.concat) {
-      print("Exp Next: ${tokenizer.next.type}");
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
       Node right = parseTerm();
@@ -61,7 +60,6 @@ class Parser {
   }
 
   Node statement() {
-    print("Statement Next: ${tokenizer.next.type}");
     if (tokenizer.next.type == TokenType.identifier) {
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
@@ -77,7 +75,6 @@ class Parser {
         throw FormatException("Expected '=' but found ${tokenizer.next.type}");
       }
     } else if (tokenizer.next.type == TokenType.local) {
-      print("LOCAL");
       tokenizer.selectNext();
       if (tokenizer.next.type != TokenType.identifier) {
         throw FormatException(
@@ -100,7 +97,6 @@ class Parser {
       }
       return LocalAssignOp(id, expression);
     } else if (tokenizer.next.type == TokenType.print) {
-      print("PRINT");
       tokenizer.selectNext();
       if (tokenizer.next.type != TokenType.openParen) {
         throw FormatException("Expected '(' but found ${tokenizer.next.type}");
@@ -113,7 +109,6 @@ class Parser {
       tokenizer.selectNext(); // Consume ')'
       return PrintOp(expression);
     } else if (tokenizer.next.type == TokenType.whileToken) {
-      print("WHILE");
       tokenizer.selectNext(); // Consume 'while'
       final Node condition = boolExpression();
       if (tokenizer.next.type != TokenType.doToken) {
@@ -145,9 +140,7 @@ class Parser {
             "Expected line break but found ${tokenizer.next.type}");
       }
       tokenizer.selectNext();
-      print("JJJJJJJJJ ${tokenizer.next.type}");
       final Node block = this.endBlock();
-      print("JJJJJJJJJ ${tokenizer.next.type}");
       if (tokenizer.next.type == TokenType.elseToken) {
         tokenizer.selectNext();
         final Node elseBlock = this.endBlock();
@@ -164,7 +157,6 @@ class Parser {
             "Expected 'end' but found ${tokenizer.next.type}");
       }
       tokenizer.selectNext(); // Consume 'end'
-      print("HHHHHHHHHH ${tokenizer.next.type}");
       if (tokenizer.next.type != TokenType.lineBreak) {
         throw FormatException(
             "Expected line break but found ${tokenizer.next.type}");
@@ -172,7 +164,6 @@ class Parser {
       tokenizer.selectNext();
       return IfOp(condition, block, null);
     }
-    print("Statement Next: ${tokenizer.next.type}");
     if (tokenizer.next.type != TokenType.lineBreak) {
       throw FormatException(
           "Expected line break but found ${tokenizer.next.type}");
@@ -212,7 +203,6 @@ class Parser {
     Node result = parseFactor();
     while (tokenizer.next.type == TokenType.multiply ||
         tokenizer.next.type == TokenType.divide) {
-      print("Term Next: ${tokenizer.next.type}");
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
       Node right = parseFactor();
@@ -222,36 +212,28 @@ class Parser {
   }
 
   Node parseFactor() {
-    print("Factor Next: ${tokenizer.next.type}");
     if (tokenizer.next.type == TokenType.integer) {
-      print("Factor Int: ${tokenizer.next.value}");
       int value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
     } else if (tokenizer.next.type == TokenType.identifier) {
-      print("Factor Id: ${tokenizer.next.value}");
       final Token identifier = tokenizer.next;
       tokenizer.selectNext();
       return Identifier(identifier.value);
     } else if (tokenizer.next.type == TokenType.string) {
-      print("Factor Str: ${tokenizer.next.value}");
       final String value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume string
       return StringVal(value);
     } else if (tokenizer.next.type == TokenType.plus) {
-      print("Factor Plus: ${tokenizer.next.value}");
       tokenizer.selectNext(); // Consume operator
       return UnOp(parseFactor(), '+');
     } else if (tokenizer.next.type == TokenType.minus) {
-      print("Factor Minus: ${tokenizer.next.value}");
       tokenizer.selectNext(); // Consume operator
       return UnOp(parseFactor(), '-');
     } else if (tokenizer.next.type == TokenType.not) {
-      print("Factor Not: ${tokenizer.next.value}");
       tokenizer.selectNext(); // Consume operator
       return UnOp(parseFactor(), '!');
     } else if (tokenizer.next.type == TokenType.openParen) {
-      print("Factor Paren: ${tokenizer.next.value}");
       tokenizer.selectNext(); // Consume '('
       Node result = boolExpression();
       if (tokenizer.next.type != TokenType.closeParen) {
@@ -279,7 +261,6 @@ class Parser {
   Node boolExpression() {
     Node result = boolTerm();
     while (tokenizer.next.type == TokenType.or) {
-      print("Bool Exp Next: ${tokenizer.next.type}");
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
       Node right = boolTerm();
@@ -291,7 +272,6 @@ class Parser {
   Node boolTerm() {
     Node result = relExpression();
     while (tokenizer.next.type == TokenType.and) {
-      print("Bool Term Next: ${tokenizer.next.type}");
       var operator = tokenizer.next.type;
       tokenizer.selectNext(); // Consume operator
       Node right = relExpression();
@@ -302,7 +282,6 @@ class Parser {
 
   Node relExpression() {
     Node result = parseExpression();
-    print("Rel Exp Next: ${tokenizer.next.type}");
     switch (tokenizer.next.type) {
       case TokenType.equalEqual:
       case TokenType.greater:
@@ -344,8 +323,8 @@ void main(List<String> args) {
       stdout.writeln(result);
     }
   } catch (e, s) {
-    print('Error: ${e.toString()}');
-    print('Stack Trace:\n$s');
-    // throw e;
+    // print('Error: ${e.toString()}');
+    // print('Stack Trace:\n$s');
+    throw e;
   }
 }
