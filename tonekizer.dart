@@ -120,7 +120,7 @@ class Tokenizer {
       case '.':
         if (position + 1 < source.length && source[position + 1] == '.') {
           next = Token(TokenType.concat, 0);
-          position += 2; // Move beyond the ".."
+          position += 2;
         } else {
           throw FormatException(
               "Unrecognized character '.' at position $position");
@@ -160,7 +160,7 @@ class Tokenizer {
               source[position].contains(RegExp(r'\d'))) {
             position++;
           }
-          final number = double.parse(source.substring(start, position));
+          final number = int.parse(source.substring(start, position));
           next = Token(TokenType.integer, number);
         } else {
           throw FormatException(

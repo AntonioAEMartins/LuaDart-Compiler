@@ -19,97 +19,130 @@ class BinOp extends Node {
     var leftResult = left.Evaluate(_table);
     var rightResult = right.Evaluate(_table);
 
-    // Verificar se os tipos são compatíveis para cada operação
-    if (value == "TokenType.plus") {
-      if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
-        // Concatenação de strings
-        return {
-          'value':
-              leftResult['value'].toString() + rightResult['value'].toString(),
-          'type': 'string'
-        };
-      } else if (leftResult['type'] == 'integer' &&
-          rightResult['type'] == 'integer') {
-        // Soma de inteiros
-        return {
-          'value': leftResult['value'] + rightResult['value'],
-          'type': 'integer'
-        };
-      } else {
-        throw Exception('Type mismatch for + operator');
+    if (value != "TokenType.and" && value != "TokenType.or") {
+      if (leftResult['type'] == 'boolean') {
+        leftResult['value'] = leftResult['value'] ? 1 : 0;
+        leftResult['type'] = 'integer';
       }
-    } else if (value == "TokenType.concat") {
-      if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
-        // Concatenação de strings
-        return {
-          'value':
-              leftResult['value'].toString() + rightResult['value'].toString(),
-          'type': 'string'
-        };
-      } else {
-        throw Exception('Type mismatch for .. operator');
+      if (rightResult['type'] == 'boolean') {
+        rightResult['value'] = rightResult['value'] ? 1 : 0;
+        rightResult['type'] = 'integer';
       }
-    } else if (value == "TokenType.minus" &&
-        leftResult['type'] == 'integer' &&
-        rightResult['type'] == 'integer') {
-      return {
-        'value': leftResult['value'] - rightResult['value'],
-        'type': 'integer'
-      };
-    } else if (value == "TokenType.multiply" &&
-        leftResult['type'] == 'integer' &&
-        rightResult['type'] == 'integer') {
-      return {
-        'value': leftResult['value'] * rightResult['value'],
-        'type': 'integer'
-      };
-    } else if (value == "TokenType.divide" &&
-        leftResult['type'] == 'integer' &&
-        rightResult['type'] == 'integer') {
-      return {
-        'value': leftResult['value'] / rightResult['value'],
-        'type': 'integer'
-      };
-    } else if (value == "TokenType.greater" &&
-        leftResult['type'] == 'integer' &&
-        rightResult['type'] == 'integer') {
-      return {
-        'value': leftResult['value'] > rightResult['value'],
-        'type': 'boolean'
-      };
-    } else if (value == "TokenType.less" &&
-        leftResult['type'] == 'integer' &&
-        rightResult['type'] == 'integer') {
-      return {
-        'value': leftResult['value'] < rightResult['value'],
-        'type': 'boolean'
-      };
-    } else if (value == "TokenType.equalEqual" &&
-        leftResult['type'] == 'integer' &&
-        rightResult['type'] == 'integer') {
-      return {
-        'value': leftResult['value'] == rightResult['value'],
-        'type': 'boolean'
-      };
-    } else if (value == "TokenType.and" &&
-        leftResult['type'] == 'boolean' &&
-        rightResult['type'] == 'boolean') {
-      return {
-        'value': leftResult['value'] && rightResult['value'],
-        'type': 'boolean'
-      };
-    } else if (value == "TokenType.or" &&
-        leftResult['type'] == 'boolean' &&
-        rightResult['type'] == 'boolean') {
-      return {
-        'value': leftResult['value'] || rightResult['value'],
-        'type': 'boolean'
-      };
-    } else {
-      print("leftResult: $leftResult");
-      print("rightResult: $rightResult");
-      print("value: $value");
-      throw Exception('Invalid operator or type mismatch');
+    }
+
+    switch (value) {
+      case "TokenType.plus":
+        if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
+          return {
+            'value': leftResult['value'].toString() +
+                rightResult['value'].toString(),
+            'type': 'string'
+          };
+        } else if (leftResult['type'] == 'integer' &&
+            rightResult['type'] == 'integer') {
+          return {
+            'value': leftResult['value'] + rightResult['value'],
+            'type': 'integer'
+          };
+        }
+        break;
+      case "TokenType.concat":
+        if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
+          return {
+            'value': leftResult['value'].toString() +
+                rightResult['value'].toString(),
+            'type': 'string'
+          };
+        } else if (leftResult['type'] == 'integer' &&
+            rightResult['type'] == 'integer') {
+          return {
+            'value': leftResult['value'].toString() +
+                rightResult['value'].toString(),
+            'type': 'integer'
+          };
+        }
+        break;
+
+      case "TokenType.minus":
+        if (leftResult['type'] == 'integer' &&
+            rightResult['type'] == 'integer') {
+          return {
+            'value': leftResult['value'] - rightResult['value'],
+            'type': 'integer'
+          };
+        }
+        break;
+
+      case "TokenType.multiply":
+        if (leftResult['type'] == 'integer' &&
+            rightResult['type'] == 'integer') {
+          return {
+            'value': leftResult['value'] * rightResult['value'],
+            'type': 'integer'
+          };
+        }
+        break;
+
+      case "TokenType.divide":
+        if (leftResult['type'] == 'integer' &&
+            rightResult['type'] == 'integer') {
+          return {
+            'value': leftResult['value'] / rightResult['value'],
+            'type': 'integer'
+          };
+        }
+        break;
+
+      case "TokenType.greater":
+      case "TokenType.less":
+      case "TokenType.equalEqual":
+        if (leftResult['type'] == rightResult['type']) {
+          return {
+            'value': evalComparison(
+                leftResult['value'], rightResult['value'], value),
+            'type': 'boolean'
+          };
+        }
+        break;
+
+      case "TokenType.and":
+      case "TokenType.or":
+        if (leftResult['type'] == 'boolean' &&
+            rightResult['type'] == 'boolean') {
+          return {
+            'value': value == "TokenType.and"
+                ? leftResult['value'] && rightResult['value']
+                : leftResult['value'] || rightResult['value'],
+            'type': 'boolean'
+          };
+        }
+        break;
+    }
+    throw Exception('Invalid operator or type mismatch');
+  }
+
+  dynamic evalComparison(dynamic left, dynamic right, String operation) {
+    if (left is String && right is String) {
+      switch (operation) {
+        case "TokenType.greater":
+          return left.compareTo(right) > 0;
+        case "TokenType.less":
+          return left.compareTo(right) < 0;
+        case "TokenType.equalEqual":
+          return left.compareTo(right) == 0;
+        default:
+          throw Exception('Unsupported comparison operation');
+      }
+    }
+    switch (operation) {
+      case "TokenType.greater":
+        return left > right;
+      case "TokenType.less":
+        return left < right;
+      case "TokenType.equalEqual":
+        return left == right;
+      default:
+        throw Exception('Unsupported comparison operation');
     }
   }
 }
@@ -134,7 +167,7 @@ class UnOp extends Node {
 }
 
 class IntVal extends Node {
-  IntVal(double value) : super({'value': value, 'type': 'integer'});
+  IntVal(int value) : super({'value': value, 'type': 'integer'});
 
   @override
   dynamic Evaluate(SymbolTable _table) {
@@ -167,7 +200,10 @@ class PrintOp extends Node {
   @override
   dynamic Evaluate(SymbolTable _table) {
     var result = expr.Evaluate(_table);
-    print(result['value'].toString());
+    if (result["type"] == "boolean") {
+      result["value"] = result["value"] ? 1 : 0;
+    }
+    print(result['value']);
   }
 }
 
@@ -215,7 +251,7 @@ class ReadOp extends Node {
   dynamic Evaluate(SymbolTable _table) {
     var input = stdin.readLineSync() ?? '';
     try {
-      double number = double.parse(input);
+      int number = int.parse(input);
       return {'value': number, 'type': 'integer'};
     } catch (e) {
       return {'value': input, 'type': 'string'};

@@ -172,7 +172,7 @@ class Parser {
 
   Node parseFactor() {
     if (tokenizer.next.type == TokenType.integer) {
-      double value = tokenizer.next.value;
+      int value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
     } else if (tokenizer.next.type == TokenType.identifier) {
