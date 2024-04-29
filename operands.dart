@@ -227,9 +227,28 @@ class AssignOp extends Node {
   dynamic Evaluate(SymbolTable _table) {
     var exprResult = expr.Evaluate(_table);
     _table.set(
-        key: identifier.name,
-        value: exprResult['value'],
-        type: exprResult['type']);
+      key: identifier.name,
+      value: exprResult['value'],
+      type: exprResult['type'],
+      isLocal: false,
+    );
+  }
+}
+
+class LocalAssignOp extends Node {
+  final Identifier identifier;
+  final Node expr;
+  LocalAssignOp(this.identifier, this.expr) : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table) {
+    var exprResult = expr.Evaluate(_table);
+    _table.set(
+      key: identifier.name,
+      value: exprResult['value'],
+      type: exprResult['type'],
+      isLocal: true,
+    );
   }
 }
 

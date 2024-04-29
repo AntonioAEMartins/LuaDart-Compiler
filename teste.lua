@@ -1,1 +1,5 @@
-Print(1)
+
+local x
+local x
+
+
