@@ -395,7 +395,7 @@ class IfOp extends Node {
     write.code += "IF_${this.id}:\n";
     if (condition.Evaluate(_table)['value']) {
       write.code += "CMP EAX, False\n";
-      write.code += "JE ELSE_${id}\n";
+      write.code += "JE ELSE_${id}:\n";
       ifOp.Evaluate(_table);
     } else {
       write.code += "JMP EXIT_${id}\n";
