@@ -12,6 +12,8 @@ class SymbolTable {
 
   final Map<String, Map<String, dynamic>> _table = {};
 
+  int _offset = 4;
+
   void set(
       {required String key,
       required dynamic value,
@@ -19,23 +21,34 @@ class SymbolTable {
       required bool isLocal}) {
     if (!isLocal) {
       if (_table[key] != null) {
-        _table[key] = {'value': value, 'type': type};
+        final auxOffset = _table[key]!['offset'];
+        _table[key] = {'value': value, 'type': type, 'offset': auxOffset};
       } else {
         throw Exception('Variable already defined: $key');
       }
     } else if (_table[key] == null) {
-      _table[key] = {'value': value, 'type': type};
+      _table[key] = {'value': value, 'type': type, 'offset': _offset};
+      print('Local variable: $key, offset: $_offset');
+      _offset += 4;
     } else {
       throw Exception('Variable already defined: $key (local)');
     }
   }
 
-  ({dynamic value, String type}) get(String key) {
+  ({dynamic value, String type, int offset}) get(String key) {
     final value = _table[key];
     if (value == null) {
       throw Exception('Undefined variable: $key');
     }
-    return (value: value['value'], type: value['type']);
+    return (value: value['value'], type: value['type'], offset: _offset);
+  }
+
+  int getOffset(String key) {
+    final value = _table[key];
+    if (value == null) {
+      throw Exception('Undefined variable: $key');
+    }
+    return value['offset'];
   }
 }
 
@@ -303,14 +316,48 @@ class Parser {
   }
 }
 
+class Write {
+  String code = "";
+  late File file;
+
+  static Write? _instance;
+
+  Write._();
+
+  factory Write() {
+    return _instance ??= Write._();
+  }
+
+  void writeHeader(String headerPath) {
+    final header = File(headerPath);
+    final headerContent = header.readAsStringSync();
+    file.writeAsStringSync(headerContent, mode: FileMode.write);
+  }
+
+  void writeFooter(String footerPath) {
+    final footer = File(footerPath);
+    final footerContent = footer.readAsStringSync();
+    file.writeAsStringSync(footerContent, mode: FileMode.append);
+  }
+
+  void writeCode() {
+    file.writeAsStringSync(code, mode: FileMode.append);
+  }
+}
+
 void main(List<String> args) {
   if (args.isEmpty) {
     throw ArgumentError('Please provide an expression to parse');
   }
   PrePro prePro = PrePro();
+
   final file = File(args[0]);
   final content = file.readAsStringSync();
   final filtered = prePro.filter(content);
+
+  Write write = Write();
+  write.file = File(args[0].replaceAll('.lua', '.asm'));
+
   try {
     final SymbolTable table = SymbolTable.instance;
     final parser = Parser(filtered);
@@ -318,13 +365,18 @@ void main(List<String> args) {
     if (ast.children.isEmpty) {
       throw Exception('No statements found');
     }
+
     final result = ast.Evaluate(table);
+    print("Symbol Table: ${table._table}");
+    write.writeHeader('header.asm');
+    write.writeCode();
+    write.writeFooter('footer.asm');
     if (result != null) {
       stdout.writeln(result);
     }
   } catch (e, s) {
-    // print('Error: ${e.toString()}');
-    // print('Stack Trace:\n$s');
+    print('Error: ${e.toString()}');
+    print('Stack Trace:\n$s');
     throw e;
   }
 }
