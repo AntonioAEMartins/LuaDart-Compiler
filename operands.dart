@@ -393,16 +393,26 @@ class IfOp extends Node {
   dynamic Evaluate(SymbolTable _table) {
     Write write = Write();
     write.code += "IF_${this.id}:\n";
-    if (condition.Evaluate(_table)['value']) {
-      write.code += "CMP EAX, False\n";
-      write.code += "JE ELSE_${id}\n";
-      ifOp.Evaluate(_table);
-    } else {
-      write.code += "JMP EXIT_${id}\n";
-      write.code += "ELSE_${id}:\n";
-      elseOp?.Evaluate(_table);
-    }
+
+    final ifCondition = condition.Evaluate(_table)["value"];
+
+    write.code += "CMP EAX, False\n";
+    write.code += "JE ELSE_${id}\n";
+
+    final ifBlock = ifOp.Evaluate(_table);
+
+    write.code += "JMP EXIT_${id}\n";
+    write.code += "ELSE_${id}:\n";
+
+    final elseBlock = elseOp?.Evaluate(_table);
+
     write.code += "EXIT_${id}:\n";
+
+    if (ifCondition) {
+      ifBlock;
+    } else {
+      elseBlock;
+    }
   }
 }
 
