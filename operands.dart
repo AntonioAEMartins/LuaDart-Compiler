@@ -264,7 +264,6 @@ class PrintOp extends Node {
     if (result["type"] == "boolean") {
       result["value"] = result["value"] ? 1 : 0;
     }
-    print(result['value']);
   }
 }
 
@@ -315,7 +314,6 @@ class LocalAssignOp extends Node {
     write.code += "PUSH DWORD 0\n";
 
     var exprResult = expr.Evaluate(_table);
-    print("Ariel");
 
     _table.set(
       key: identifier.name,
