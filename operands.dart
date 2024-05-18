@@ -226,9 +226,6 @@ class AssignOp extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     var exprResult = expr.Evaluate(_table, _funcTable);
-
-    print("AssignOp: ExprResult: ${exprResult}");
-
     _table.set(
       key: identifier.name,
       value: exprResult['value'],
@@ -382,7 +379,6 @@ class ReturnOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
-    print("ReturnOp: Expr: ${expr}");
     return expr.Evaluate(_table, _funcTable);
   }
 }

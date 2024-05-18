@@ -265,7 +265,6 @@ class Parser {
     while (tokenizer.next.type != TokenType.eof &&
         tokenizer.next.type != TokenType.endToken) {
       result.children.add(statement());
-      print("Block ${tokenizer.next.type}");
     }
 
     if (tokenizer.next.type == TokenType.endToken) {
@@ -432,8 +431,8 @@ void main(List<String> args) {
       stdout.writeln(result);
     }
   } catch (e, s) {
-    print('Error: ${e.toString()}');
-    print('Stack Trace:\n$s');
-    // throw e;
+    // print('Error: ${e.toString()}');
+    // print('Stack Trace:\n$s');
+    throw e;
   }
 }
