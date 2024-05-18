@@ -122,10 +122,6 @@ class Parser {
         return FuncCallOp(Identifier(identifier.value), parameters);
       }
 
-      if (tokenizer.next.type == TokenType.lineBreak) {
-        return NoOp();
-      }
-
       throw FormatException("Token not expected ${tokenizer.next.type}");
     } else if (tokenizer.next.type == TokenType.local) {
       tokenizer.selectNext();
