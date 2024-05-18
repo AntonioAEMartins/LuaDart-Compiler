@@ -32,7 +32,9 @@ class BinOp extends Node {
 
     switch (value) {
       case "TokenType.plus":
-        if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
+        print("Righ: ${rightResult['type']}");
+        if (leftResult['type'] == 'string' && rightResult['type'] == 'string') {
+          print("Salve");
           return {
             'value': leftResult['value'].toString() +
                 rightResult['value'].toString(),
@@ -40,11 +42,13 @@ class BinOp extends Node {
           };
         } else if (leftResult['type'] == 'integer' &&
             rightResult['type'] == 'integer') {
+          print("F");
           return {
             'value': leftResult['value'] + rightResult['value'],
             'type': 'integer'
           };
         }
+        print("H");
         break;
       case "TokenType.concat":
         if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
