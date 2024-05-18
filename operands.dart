@@ -18,6 +18,16 @@ class BinOp extends Node {
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     var leftResult = left.Evaluate(_table, _funcTable);
     var rightResult = right.Evaluate(_table, _funcTable);
+    print(
+        "BinOp Result: Right: ${rightResult} Left: ${leftResult['value']} Op: $value");
+
+    if (rightResult == null) {
+      rightResult = {'value': 0, 'type': 'integer'};
+    }
+
+    if (leftResult == null) {
+      leftResult = {'value': 0, 'type': 'integer'};
+    }
 
     if (value != "TokenType.and" && value != "TokenType.or") {
       if (leftResult['type'] == 'boolean') {
@@ -226,6 +236,7 @@ class AssignOp extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     var exprResult = expr.Evaluate(_table, _funcTable);
+
     _table.set(
       key: identifier.name,
       value: exprResult['value'],
@@ -258,8 +269,9 @@ class Block extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     for (var child in children) {
-      if (child.runtimeType == ReturnOp) {
-        return child.Evaluate(_table, _funcTable);
+      if (child.runtimeType == ReturnOp || child.runtimeType == IfOp) {
+        final aux = child.Evaluate(_table, _funcTable);
+        return aux;
       }
       child.Evaluate(_table, _funcTable);
     }
@@ -304,9 +316,15 @@ class IfOp extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     if (condition.Evaluate(_table, _funcTable)['value']) {
-      ifOp.Evaluate(_table, _funcTable);
+      final ifResult = ifOp.Evaluate(_table, _funcTable);
+      if (ifResult != null) {
+        return ifResult;
+      }
     } else {
-      elseOp?.Evaluate(_table, _funcTable);
+      final elseResult = elseOp?.Evaluate(_table, _funcTable);
+      if (elseResult != null) {
+        return elseResult;
+      }
     }
   }
 }

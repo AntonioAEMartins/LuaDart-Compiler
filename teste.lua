@@ -1,15 +1,13 @@
 
--- Type mismatch
-function ok(x)
-    return x
-end
-
-function main()
-    local y = ok("x")
-
-    print(y + 1)
-end
-
-main()
-
-
+function fatorial(n)
+    if n == 0 then
+      return 1
+    else
+      return n * fatorial(n - 1)
+    end
+  end
+  
+local resultado
+resultado = fatorial(5)
+  
+print(resultado)
