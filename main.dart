@@ -101,9 +101,32 @@ class Parser {
           throw FormatException("Token not expected ${tokenizer.next.type}");
         }
         return AssignOp(id, expression);
-      } else {
-        throw FormatException("Expected '=' but found ${tokenizer.next.type}");
       }
+
+      if (tokenizer.next.type == TokenType.openParen) {
+        tokenizer.selectNext(); // Consume '('
+        List<Node> parameters = [];
+        if (tokenizer.next.type != TokenType.closeParen) {
+          parameters.add(boolExpression());
+          while (tokenizer.next.type == TokenType.comma) {
+            tokenizer.selectNext(); // Consume ','
+            parameters.add(boolExpression());
+          }
+        }
+
+        if (tokenizer.next.type != TokenType.closeParen) {
+          throw FormatException(
+              "Expected ')' but found ${tokenizer.next.type}");
+        }
+        tokenizer.selectNext(); // Consume ')'
+        return FuncCallOp(Identifier(identifier.value), parameters);
+      }
+
+      if (tokenizer.next.type == TokenType.lineBreak) {
+        return NoOp();
+      }
+
+      throw FormatException("Token not expected ${tokenizer.next.type}");
     } else if (tokenizer.next.type == TokenType.local) {
       tokenizer.selectNext();
       if (tokenizer.next.type != TokenType.identifier) {
