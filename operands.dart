@@ -301,7 +301,10 @@ class WhileOp extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     while (condition.Evaluate(_table, _funcTable)['value']) {
-      block.Evaluate(_table, _funcTable);
+      final aux = block.Evaluate(_table, _funcTable);
+      if (aux != null) {
+        return aux;
+      }
     }
   }
 }
