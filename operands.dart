@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'main.dart';
 
 int loopCounter = 0;
@@ -9,7 +8,7 @@ abstract class Node {
   List<Node> children = [];
   Node(this.value);
 
-  dynamic Evaluate(SymbolTable _table);
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable);
 }
 
 class BinOp extends Node {
@@ -18,183 +17,43 @@ class BinOp extends Node {
   BinOp(this.left, this.right, String op) : super(op);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
-    var rightResult = right.Evaluate(_table);
+    right.Evaluate(_table, _funcTable);
     write.code += "PUSH EAX\n";
-    var leftResult = left.Evaluate(_table);
+    left.Evaluate(_table, _funcTable);
     write.code += "POP EBX\n";
-
-    if (value != "TokenType.and" && value != "TokenType.or") {
-      if (leftResult['type'] == 'boolean') {
-        leftResult['value'] = leftResult['value'] ? 1 : 0;
-        leftResult['type'] = 'integer';
-      }
-      if (rightResult['type'] == 'boolean') {
-        rightResult['value'] = rightResult['value'] ? 1 : 0;
-        rightResult['type'] = 'integer';
-      }
-    }
 
     switch (value) {
       case "TokenType.plus":
         write.code += "ADD EAX, EBX\n";
-        if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
-          return {
-            'value': leftResult['value'].toString() +
-                rightResult['value'].toString(),
-            'type': 'string'
-          };
-        } else if (leftResult['type'] == 'integer' &&
-            rightResult['type'] == 'integer') {
-          return {
-            'value': leftResult['value'] + rightResult['value'],
-            'type': 'integer'
-          };
-        }
         break;
-      case "TokenType.concat":
-        if (leftResult['type'] == 'string' || rightResult['type'] == 'string') {
-          return {
-            'value': leftResult['value'].toString() +
-                rightResult['value'].toString(),
-            'type': 'string'
-          };
-        } else if (leftResult['type'] == 'integer' &&
-            rightResult['type'] == 'integer') {
-          return {
-            'value': leftResult['value'].toString() +
-                rightResult['value'].toString(),
-            'type': 'integer'
-          };
-        }
-        break;
-
       case "TokenType.minus":
         write.code += "SUB EAX, EBX\n";
-
-        if (leftResult['type'] == 'integer' &&
-            rightResult['type'] == 'integer') {
-          return {
-            'value': leftResult['value'] - rightResult['value'],
-            'type': 'integer'
-          };
-        }
         break;
-
       case "TokenType.multiply":
         write.code += "IMUL EAX, EBX\n";
-
-        if (leftResult['type'] == 'integer' &&
-            rightResult['type'] == 'integer') {
-          return {
-            'value': leftResult['value'] * rightResult['value'],
-            'type': 'integer'
-          };
-        }
         break;
-
       case "TokenType.divide":
-        write.code += "IDIV EAX, EBX\n";
-        if (leftResult['type'] == 'integer' &&
-            rightResult['type'] == 'integer') {
-          return {
-            'value': leftResult['value'] ~/ rightResult['value'],
-            'type': 'integer'
-          };
-        }
+        write.code += "IDIV EBX\n";
         break;
-
       case "TokenType.greater":
-        write.code += "CMP EAX, EBX\n";
-
-        write.code += "CALL binop_jg\n";
-
-        if (leftResult['type'] == rightResult['type']) {
-          return {
-            'value': evalComparison(
-                leftResult['value'], rightResult['value'], value),
-            'type': 'boolean'
-          };
-        }
+        write.code += "CMP EAX, EBX\nCALL binop_jg\n";
         break;
-
       case "TokenType.less":
-        write.code += "CMP EAX, EBX\n";
-        write.code += "CALL binop_jl\n";
-
-        if (leftResult['type'] == rightResult['type']) {
-          return {
-            'value': evalComparison(
-                leftResult['value'], rightResult['value'], value),
-            'type': 'boolean'
-          };
-        }
+        write.code += "CMP EAX, EBX\nCALL binop_jl\n";
         break;
-
       case "TokenType.equalEqual":
-        write.code += "CMP EAX, EBX\n";
-        write.code += "CALL binop_je\n";
-
-        if (leftResult['type'] == rightResult['type']) {
-          return {
-            'value': evalComparison(
-                leftResult['value'], rightResult['value'], value),
-            'type': 'boolean'
-          };
-        }
+        write.code += "CMP EAX, EBX\nCALL binop_je\n";
         break;
-
       case "TokenType.and":
         write.code += "AND EAX, EBX\n";
-        if (leftResult['type'] == 'boolean' &&
-            rightResult['type'] == 'boolean') {
-          return {
-            'value': value == "TokenType.and"
-                ? leftResult['value'] && rightResult['value']
-                : leftResult['value'] || rightResult['value'],
-            'type': 'boolean'
-          };
-        }
         break;
       case "TokenType.or":
         write.code += "OR EAX, EBX\n";
-        if (leftResult['type'] == 'boolean' &&
-            rightResult['type'] == 'boolean') {
-          return {
-            'value': value == "TokenType.and"
-                ? leftResult['value'] && rightResult['value']
-                : leftResult['value'] || rightResult['value'],
-            'type': 'boolean'
-          };
-        }
         break;
-    }
-    throw Exception('Invalid operator or type mismatch');
-  }
-
-  dynamic evalComparison(dynamic left, dynamic right, String operation) {
-    if (left is String && right is String) {
-      switch (operation) {
-        case "TokenType.greater":
-          return left.compareTo(right) > 0;
-        case "TokenType.less":
-          return left.compareTo(right) < 0;
-        case "TokenType.equalEqual":
-          return left.compareTo(right) == 0;
-        default:
-          throw Exception('Unsupported comparison operation');
-      }
-    }
-    switch (operation) {
-      case "TokenType.greater":
-        return left > right;
-      case "TokenType.less":
-        return left < right;
-      case "TokenType.equalEqual":
-        return left == right;
       default:
-        throw Exception('Unsupported comparison operation');
+        throw Exception('Invalid operator');
     }
   }
 }
@@ -204,16 +63,16 @@ class UnOp extends Node {
   UnOp(this.expr, String op) : super(op);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
-    var result = expr.Evaluate(_table);
-    if (value == "!" && result['type'] == 'boolean') {
-      return {'value': !result['value'], 'type': 'boolean'};
-    } else if (value == "-" && result['type'] == 'integer') {
-      return {'value': -result['value'], 'type': 'integer'};
-    } else if (value == "+" && result['type'] == 'integer') {
-      return {'value': result['value'], 'type': 'integer'};
-    } else {
-      throw Exception('Invalid unary operator or type mismatch');
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    expr.Evaluate(_table, _funcTable);
+    Write write = Write();
+
+    if (value == "!") {
+      write.code += "NOT EAX\n";
+    } else if (value == "-") {
+      write.code += "NEG EAX\n";
+    } else if (value != "+") {
+      throw Exception('Invalid unary operator');
     }
   }
 }
@@ -222,12 +81,9 @@ class IntVal extends Node {
   IntVal(int value) : super({'value': value, 'type': 'integer'});
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
-
     write.code += "MOV EAX, ${value["value"]}\n";
-
-    return value;
   }
 }
 
@@ -235,8 +91,8 @@ class StringVal extends Node {
   StringVal(String value) : super({'value': value, 'type': 'string'});
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
-    return value;
+  dynamic Evaluate(SymbolTable _table, _funcTable) {
+    // String values are handled differently in assembly, typically involving storing in memory and addressing
   }
 }
 
@@ -244,8 +100,8 @@ class NoOp extends Node {
   NoOp() : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
-    return null;
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    // No operation, no assembly code needed
   }
 }
 
@@ -254,17 +110,13 @@ class PrintOp extends Node {
   PrintOp(this.expr) : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
-    var result = expr.Evaluate(_table);
+    expr.Evaluate(_table, _funcTable);
     write.code += "PUSH EAX\n";
     write.code += "PUSH formatout\n";
     write.code += "CALL printf\n";
     write.code += "ADD ESP, 8\n";
-    if (result["type"] == "boolean") {
-      result["value"] = result["value"] ? 1 : 0;
-    }
-    print(result['value']);
   }
 }
 
@@ -273,12 +125,10 @@ class Identifier extends Node {
   Identifier(this.name) : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
     final offset = _table.getOffset(name);
     write.code += "MOV EAX, [EBP-${offset}]\n";
-    var entry = _table.get(name);
-    return {'value': entry.value, 'type': entry.type};
   }
 }
 
@@ -288,39 +138,32 @@ class AssignOp extends Node {
   AssignOp(this.identifier, this.expr) : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
-    var exprResult = expr.Evaluate(_table);
-
+    expr.Evaluate(_table, _funcTable);
     final offset = _table.getOffset(identifier.name);
     write.code += "MOV [EBP-${offset}], EAX\n";
-
-    _table.set(
-      key: identifier.name,
-      value: exprResult['value'],
-      type: exprResult['type'],
-      isLocal: false,
-    );
   }
 }
 
-class LocalAssignOp extends Node {
+class VarDecOp extends Node {
   final Identifier identifier;
   final Node expr;
-  LocalAssignOp(this.identifier, this.expr) : super(null);
+  VarDecOp(this.identifier, this.expr) : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
     write.code += "PUSH DWORD 0\n";
 
-    var exprResult = expr.Evaluate(_table);
-    print("Ariel");
+    expr.Evaluate(_table, _funcTable);
 
     _table.set(
       key: identifier.name,
-      value: exprResult['value'],
-      type: exprResult['type'],
+      // value: exprResult['value'],
+      // type: exprResult['type'],
+      value: null,
+      type: null,
       isLocal: true,
     );
   }
@@ -330,9 +173,9 @@ class Block extends Node {
   Block() : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     for (var child in children) {
-      child.Evaluate(_table);
+      child.Evaluate(_table, _funcTable);
     }
   }
 }
@@ -341,20 +184,13 @@ class ReadOp extends Node {
   ReadOp() : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
     write.code += "PUSH scanint\n";
     write.code += "PUSH formatin\n";
     write.code += "CALL scanf\n";
     write.code += "ADD ESP, 8\n";
     write.code += "MOV EAX, DWORD [scanint]\n";
-    var input = stdin.readLineSync() ?? '';
-    try {
-      int number = int.parse(input);
-      return {'value': number, 'type': 'integer'};
-    } catch (e) {
-      return {'value': input, 'type': 'string'};
-    }
   }
 }
 
@@ -364,21 +200,13 @@ class WhileOp extends Node {
   WhileOp(this.condition, this.block) : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
     write.code += "LOOP_${id}:\n";
-    final conditionResult = condition.Evaluate(_table);
-    write.code += "CMP EAX, False\n";
-    write.code += "JE EXIT_${id}\n";
-
-    final eval = block.Evaluate(_table);
-
-    write.code += "JMP LOOP_${id}\n";
-    write.code += "EXIT_${id}:\n";
-
-    while (conditionResult["value"] && eval != null) {
-      eval;
-    }
+    condition.Evaluate(_table, _funcTable);
+    write.code += "CMP EAX, False\nJE EXIT_${id}\n";
+    block.Evaluate(_table, _funcTable);
+    write.code += "JMP LOOP_${id}\nEXIT_${id}:\n";
   }
 }
 
@@ -390,29 +218,15 @@ class IfOp extends Node {
   IfOp(this.condition, this.ifOp, this.elseOp) : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
-    write.code += "IF_${this.id}:\n";
-
-    final ifCondition = condition.Evaluate(_table)["value"];
-
-    write.code += "CMP EAX, False\n";
-    write.code += "JE ELSE_${id}\n";
-
-    final ifBlock = ifOp.Evaluate(_table);
-
-    write.code += "JMP EXIT_${id}\n";
-    write.code += "ELSE_${id}:\n";
-
-    final elseBlock = elseOp?.Evaluate(_table);
-
+    write.code += "IF_${id}:\n";
+    condition.Evaluate(_table, _funcTable);
+    write.code += "CMP EAX, False\nJE ELSE_${id}\n";
+    ifOp.Evaluate(_table, _funcTable);
+    write.code += "JMP EXIT_${id}\nELSE_${id}:\n";
+    elseOp?.Evaluate(_table, _funcTable);
     write.code += "EXIT_${id}:\n";
-
-    if (ifCondition) {
-      ifBlock;
-    } else {
-      elseBlock;
-    }
   }
 }
 
@@ -420,7 +234,76 @@ class NullOp extends Node {
   NullOp() : super(null);
 
   @override
-  dynamic Evaluate(SymbolTable _table) {
-    return {"value": null, "type": null};
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    // Null operation, no assembly code needed
+  }
+}
+
+class FuncDecOp extends Node {
+  final Identifier identifier;
+  final List<Identifier> parameters;
+  final Node block;
+  FuncDecOp(this.identifier, this.parameters, this.block) : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    Write write = Write();
+    write.code += "JMP END_${identifier.name}\n";
+
+    write.code += "${identifier.name}:\n";
+    write.code += "PUSH EBP\n";
+    write.code += "MOV EBP, ESP\n";
+    // write.code += "SUB ESP, 4\n"; // Não é necessário alocar espaço adicional aqui
+
+    final localTable = SymbolTable.getNewInstance();
+
+    int offset = 8; // Offset inicial para os parâmetros
+    for (var param in parameters) {
+      localTable.setLocalFunction(
+        key: param.name,
+        value: null,
+        type: null,
+        aditionalOffset: offset,
+      );
+      offset += 4;
+    }
+
+    block.Evaluate(localTable, _funcTable);
+
+    write.code += "MOV ESP, EBP\n";
+    write.code += "POP EBP\n";
+    write.code += "RET\n";
+    write.code += "END_${identifier.name}:\n";
+  }
+}
+
+
+class FuncCallOp extends Node {
+  final Identifier identifier;
+  final List<Node> arguments;
+  FuncCallOp(this.identifier, this.arguments) : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    Write write = Write();
+
+    for (var i = arguments.length - 1; i >= 0; i--) {
+      arguments[i].Evaluate(_table, _funcTable);
+      write.code += "PUSH EAX\n";
+    }
+
+    write.code += "CALL ${identifier.name}\n";
+    write.code += "ADD ESP, ${arguments.length * 4}\n";
+  }
+}
+
+class ReturnOp extends Node {
+  final Node expr;
+  ReturnOp(this.expr) : super(null);
+
+  @override
+  dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    expr.Evaluate(_table, _funcTable);
+    // write.code += "RET\n";
   }
 }
