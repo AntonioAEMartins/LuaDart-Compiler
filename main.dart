@@ -3,42 +3,12 @@ import 'filters.dart';
 import 'operands.dart';
 import 'tonekizer.dart';
 
-class FuncTable {
-  FuncTable._privateConstructor();
-
-  static final FuncTable _instance = FuncTable._privateConstructor();
-
-  static FuncTable get instance => _instance;
-
-  final Map<String, dynamic> _table = {};
-
-  void set({required String key, required Node node}) {
-    if (_table[key] == null) {
-      _table[key] = node;
-    } else {
-      throw Exception('Function already defined: $key');
-    }
-  }
-
-  dynamic get(String key) {
-    final value = _table[key];
-    if (value == null) {
-      throw Exception('Undefined function: $key');
-    }
-    return value;
-  }
-}
-
 class SymbolTable {
   SymbolTable._privateConstructor();
 
   static final SymbolTable _instance = SymbolTable._privateConstructor();
 
   static SymbolTable get instance => _instance;
-
-  static SymbolTable getNewInstance() {
-    return SymbolTable._privateConstructor();
-  }
 
   final Map<String, Map<String, dynamic>> _table = {};
 
@@ -114,28 +84,9 @@ class Parser {
           throw FormatException("Token not expected ${tokenizer.next.type}");
         }
         return AssignOp(id, expression);
+      } else {
+        throw FormatException("Expected '=' but found ${tokenizer.next.type}");
       }
-
-      if (tokenizer.next.type == TokenType.openParen) {
-        tokenizer.selectNext(); // Consume '('
-        List<Node> parameters = [];
-        if (tokenizer.next.type != TokenType.closeParen) {
-          parameters.add(boolExpression());
-          while (tokenizer.next.type == TokenType.comma) {
-            tokenizer.selectNext(); // Consume ','
-            parameters.add(boolExpression());
-          }
-        }
-
-        if (tokenizer.next.type != TokenType.closeParen) {
-          throw FormatException(
-              "Expected ')' but found ${tokenizer.next.type}");
-        }
-        tokenizer.selectNext(); // Consume ')'
-        return FuncCallOp(Identifier(identifier.value), parameters);
-      }
-
-      throw FormatException("Token not expected ${tokenizer.next.type}");
     } else if (tokenizer.next.type == TokenType.local) {
       tokenizer.selectNext();
       if (tokenizer.next.type != TokenType.identifier) {
@@ -146,7 +97,7 @@ class Parser {
       final Identifier id = Identifier(identifier.value);
       tokenizer.selectNext();
       if (tokenizer.next.type == TokenType.lineBreak) {
-        return VarDecOp(id, NullOp());
+        return LocalAssignOp(id, NullOp());
       }
       if (tokenizer.next.type != TokenType.equal) {
         throw FormatException("Expected '=' but found ${tokenizer.next.type}");
@@ -157,7 +108,7 @@ class Parser {
       if (tokenizer.next.type == TokenType.equal) {
         throw FormatException("Token not expected ${tokenizer.next.type}");
       }
-      return VarDecOp(id, expression);
+      return LocalAssignOp(id, expression);
     } else if (tokenizer.next.type == TokenType.print) {
       tokenizer.selectNext();
       if (tokenizer.next.type != TokenType.openParen) {
@@ -225,63 +176,6 @@ class Parser {
       }
       tokenizer.selectNext();
       return IfOp(condition, block, null);
-    } else if (tokenizer.next.type == TokenType.function) {
-      tokenizer.selectNext(); // Consume 'function'
-      if (tokenizer.next.type != TokenType.identifier) {
-        throw FormatException(
-            "Expected identifier but found ${tokenizer.next.type}");
-      }
-      final Token identifier = tokenizer.next;
-      final Identifier id = Identifier(identifier.value);
-      tokenizer.selectNext();
-      if (tokenizer.next.type != TokenType.openParen) {
-        throw FormatException("Expected '(' but found ${tokenizer.next.type}");
-      }
-      tokenizer.selectNext(); // Consume '('
-      List<Identifier> parameters = [];
-      if (tokenizer.next.type == TokenType.identifier) {
-        final Token parameter = tokenizer.next;
-        parameters.add(Identifier(parameter.value));
-        tokenizer.selectNext();
-        while (tokenizer.next.type == TokenType.comma) {
-          tokenizer.selectNext(); // Consume ','
-          if (tokenizer.next.type != TokenType.identifier) {
-            throw FormatException(
-                "Expected identifier but found ${tokenizer.next.type}");
-          }
-          final Token parameter = tokenizer.next;
-          parameters.add(Identifier(parameter.value));
-          tokenizer.selectNext();
-        }
-      }
-
-      if (tokenizer.next.type != TokenType.closeParen) {
-        throw FormatException("Expected ')' but found ${tokenizer.next.type}");
-      }
-
-      tokenizer.selectNext(); // Consume ')'
-
-      if (tokenizer.next.type != TokenType.lineBreak) {
-        throw FormatException(
-            "Expected line break but found ${tokenizer.next.type}");
-      }
-
-      tokenizer.selectNext();
-
-      final Node block = this.endBlock();
-
-      if (tokenizer.next.type != TokenType.endToken) {
-        throw FormatException(
-            "Expected 'end' but found ${tokenizer.next.type}");
-      }
-
-      tokenizer.selectNext(); // Consume 'end'
-
-      return FuncDecOp(id, parameters, block);
-    } else if (tokenizer.next.type == TokenType.RETURN) {
-      tokenizer.selectNext(); // Consume 'return'
-      final Node expression = boolExpression();
-      return ReturnOp(expression);
     }
     if (tokenizer.next.type != TokenType.lineBreak) {
       throw FormatException(
@@ -293,7 +187,6 @@ class Parser {
 
   Node block() {
     Node result = Block();
-
     while (tokenizer.next.type != TokenType.eof &&
         tokenizer.next.type != TokenType.endToken) {
       result.children.add(statement());
@@ -336,33 +229,14 @@ class Parser {
       int value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume number
       return IntVal(value);
+    } else if (tokenizer.next.type == TokenType.identifier) {
+      final Token identifier = tokenizer.next;
+      tokenizer.selectNext();
+      return Identifier(identifier.value);
     } else if (tokenizer.next.type == TokenType.string) {
       final String value = tokenizer.next.value;
       tokenizer.selectNext(); // Consume string
       return StringVal(value);
-    } else if (tokenizer.next.type == TokenType.identifier) {
-      final Token identifier = tokenizer.next;
-      tokenizer.selectNext();
-
-      if (tokenizer.next.type == TokenType.openParen) {
-        tokenizer.selectNext(); // Consume '('
-        List<Node> parameters = [];
-        if (tokenizer.next.type != TokenType.closeParen) {
-          parameters.add(boolExpression());
-          while (tokenizer.next.type == TokenType.comma) {
-            tokenizer.selectNext(); // Consume ','
-            parameters.add(boolExpression());
-          }
-        }
-
-        if (tokenizer.next.type != TokenType.closeParen) {
-          throw FormatException(
-              "Expected ')' but found ${tokenizer.next.type}");
-        }
-        tokenizer.selectNext(); // Consume ')'
-        return FuncCallOp(Identifier(identifier.value), parameters);
-      }
-      return Identifier(identifier.value);
     } else if (tokenizer.next.type == TokenType.plus) {
       tokenizer.selectNext(); // Consume operator
       return UnOp(parseFactor(), '+');
@@ -486,7 +360,6 @@ void main(List<String> args) {
 
   try {
     final SymbolTable table = SymbolTable.instance;
-    final FuncTable funcTable = FuncTable.instance;
     final parser = Parser(filtered);
     final ast = parser.run();
     if (ast.children.isEmpty) {

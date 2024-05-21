@@ -27,9 +27,6 @@ enum TokenType {
   local,
   lineBreak,
   concat,
-  function,
-  RETURN,
-  comma,
 }
 
 final Map<String, TokenType> keywordTokens = {
@@ -45,8 +42,6 @@ final Map<String, TokenType> keywordTokens = {
   'or': TokenType.or,
   'and': TokenType.and,
   'local': TokenType.local,
-  'function': TokenType.function,
-  'return': TokenType.RETURN,
 };
 
 class Token {
@@ -130,10 +125,6 @@ class Tokenizer {
           throw FormatException(
               "Unrecognized character '.' at position $position");
         }
-        break;
-      case ',':
-        next = Token(TokenType.comma, 0);
-        position++;
         break;
       case '"':
       case '\'':
