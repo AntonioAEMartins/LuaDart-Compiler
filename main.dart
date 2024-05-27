@@ -70,14 +70,15 @@ class SymbolTable {
     required dynamic value,
     required dynamic type,
     int aditionalOffset = 0,
+    int signal = 1,
   }) {
     if (_table[key] == null) {
       _table[key] = {
         'value': value,
         'type': type,
-        'offset': _offset + aditionalOffset
+        'offset': (_offset + aditionalOffset) * signal
       };
-      _offset += 4 + aditionalOffset;
+      _offset += 4;
     } else {
       throw Exception('Function already defined: $key');
     }

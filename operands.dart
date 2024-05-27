@@ -83,7 +83,7 @@ class IntVal extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
-    write.code += "MOV EAX, ${value["value"]}\n";
+    write.code += "MOV EAX, ${this.value["value"]}\n";
   }
 }
 
@@ -128,7 +128,9 @@ class Identifier extends Node {
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
     final offset = _table.getOffset(name);
-    write.code += "MOV EAX, [EBP-${offset}]\n";
+    offset > 0
+        ? write.code += "MOV EAX, [EBP-${offset}]\n"
+        : write.code += "MOV EAX, [EBP + ${offset.abs()}]\n";
   }
 }
 
@@ -142,7 +144,9 @@ class AssignOp extends Node {
     Write write = Write();
     expr.Evaluate(_table, _funcTable);
     final offset = _table.getOffset(identifier.name);
-    write.code += "MOV [EBP-${offset}], EAX\n";
+    offset > 0
+        ? write.code += "MOV [EBP-${offset}], EAX\n"
+        : write.code += "MOV [EBP + ${offset.abs()}], EAX\n";
   }
 }
 
@@ -160,8 +164,6 @@ class VarDecOp extends Node {
 
     _table.set(
       key: identifier.name,
-      // value: exprResult['value'],
-      // type: exprResult['type'],
       value: null,
       type: null,
       isLocal: true,
@@ -247,25 +249,26 @@ class FuncDecOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    _funcTable.set(
+      key: identifier.name,
+      node: this,
+    );
     Write write = Write();
     write.code += "JMP END_${identifier.name}\n";
-
     write.code += "${identifier.name}:\n";
     write.code += "PUSH EBP\n";
     write.code += "MOV EBP, ESP\n";
-    // write.code += "SUB ESP, 4\n"; // Não é necessário alocar espaço adicional aqui
 
     final localTable = SymbolTable.getNewInstance();
 
-    int offset = 8; // Offset inicial para os parâmetros
     for (var param in parameters) {
       localTable.setLocalFunction(
         key: param.name,
         value: null,
         type: null,
-        aditionalOffset: offset,
+        aditionalOffset: 4,
+        signal: -1,
       );
-      offset += 4;
     }
 
     block.Evaluate(localTable, _funcTable);
@@ -277,7 +280,6 @@ class FuncDecOp extends Node {
   }
 }
 
-
 class FuncCallOp extends Node {
   final Identifier identifier;
   final List<Node> arguments;
@@ -286,6 +288,13 @@ class FuncCallOp extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
+
+    final func = _funcTable.get(identifier.name);
+
+    if (func.parameters.length != arguments.length) {
+      throw Exception(
+          'Function ${identifier.name} expects ${func.parameters.length} arguments, but ${arguments.length} were given');
+    }
 
     for (var i = arguments.length - 1; i >= 0; i--) {
       arguments[i].Evaluate(_table, _funcTable);
@@ -303,7 +312,10 @@ class ReturnOp extends Node {
 
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
+    Write write = Write();
     expr.Evaluate(_table, _funcTable);
-    // write.code += "RET\n";
+    write.code += "MOV ESP, EBP\n";
+    write.code += "POP EBP\n";
+    write.code += "RET\n";
   }
 }
