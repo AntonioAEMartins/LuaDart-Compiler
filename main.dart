@@ -366,7 +366,7 @@ void main(List<String> args) {
       throw Exception('No statements found');
     }
 
-    final result = ast.Evaluate(table, funcTable);
+    final result = ast.Evaluate(table);
     print("Symbol Table: ${table._table}");
     write.writeHeader('header.asm');
     write.writeCode();
