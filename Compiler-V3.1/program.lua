@@ -1,9 +1,5 @@
-function fatorial(n)
-    if n == 0 then
-        return 1
-    else
-        return n * fatorial(n - 1)
-    end
+function somar(a, b)
+    return a + b
 end
 
-print(fatorial(5))
+print(somar(1, 2))

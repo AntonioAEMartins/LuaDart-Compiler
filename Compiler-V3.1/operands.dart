@@ -127,6 +127,7 @@ class Identifier extends Node {
   @override
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     Write write = Write();
+    print("Identifier_Table: ${_table.table}");
     final offset = _table.getOffset(name);
     offset > 0
         ? write.code += "MOV EAX, [EBP-${offset}]\n"
@@ -272,6 +273,7 @@ class FuncDecOp extends Node {
     }
 
     block.Evaluate(localTable, _funcTable);
+    print("Local_Table: ${localTable.table}");
 
     write.code += "MOV ESP, EBP\n";
     write.code += "POP EBP\n";
@@ -295,6 +297,8 @@ class FuncCallOp extends Node {
       throw Exception(
           'Function ${identifier.name} expects ${func.parameters.length} arguments, but ${arguments.length} were given');
     }
+
+    print("Symbols: ${_table.table}");
 
     for (var i = arguments.length - 1; i >= 0; i--) {
       arguments[i].Evaluate(_table, _funcTable);

@@ -51,49 +51,28 @@ main:
     MOV EBP, ESP ; estabelece um novo base pointer
 
 ; codigo gerado pelo compilador abaixo
-JMP END_fatorial
-fatorial:
+JMP END_somar
+somar:
 PUSH EBP
 MOV EBP, ESP
-IF_22:
-MOV EAX, 0
+MOV EAX, [EBP + 12]
 PUSH EAX
 MOV EAX, [EBP + 8]
 POP EBX
-CMP EAX, EBX
-CALL binop_je
-CMP EAX, False
-JE ELSE_22
+ADD EAX, EBX
+MOV ESP, EBP
+POP EBP
+RET
+MOV ESP, EBP
+POP EBP
+RET
+END_somar:
+MOV EAX, 2
+PUSH EAX
 MOV EAX, 1
-MOV ESP, EBP
-POP EBP
-RET
-JMP EXIT_22
-ELSE_22:
-MOV EAX, 1
 PUSH EAX
-MOV EAX, [EBP + 8]
-POP EBX
-SUB EAX, EBX
-PUSH EAX
-CALL fatorial
-ADD ESP, 4
-PUSH EAX
-MOV EAX, [EBP + 8]
-POP EBX
-IMUL EAX, EBX
-MOV ESP, EBP
-POP EBP
-RET
-EXIT_22:
-MOV ESP, EBP
-POP EBP
-RET
-END_fatorial:
-MOV EAX, 5
-PUSH EAX
-CALL fatorial
-ADD ESP, 4
+CALL somar
+ADD ESP, 8
 PUSH EAX
 PUSH formatout
 CALL printf

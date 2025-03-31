@@ -44,6 +44,8 @@ class SymbolTable {
 
   int _offset = 4;
 
+  Map<String, dynamic> get table => _table;
+
   void set(
       {required String key,
       required dynamic value,
@@ -379,6 +381,7 @@ class Parser {
               "Expected ')' but found ${tokenizer.next.type}");
         }
         tokenizer.selectNext(); // Consume ')'
+        print("Parser Args: $parameters");
         return FuncCallOp(Identifier(identifier.value), parameters);
       }
       return Identifier(identifier.value);

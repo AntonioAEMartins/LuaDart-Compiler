@@ -18,8 +18,6 @@ class BinOp extends Node {
   dynamic Evaluate(SymbolTable _table, FuncTable _funcTable) {
     var leftResult = left.Evaluate(_table, _funcTable);
     var rightResult = right.Evaluate(_table, _funcTable);
-    print(
-        "BinOp Result: Right: ${rightResult} Left: ${leftResult['value']} Op: $value");
 
     if (rightResult == null) {
       rightResult = {'value': 0, 'type': 'integer'};
